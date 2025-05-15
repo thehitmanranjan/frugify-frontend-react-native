@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "14a5d0ff-8ab5-45f8-bce3-774f9ffe52b4"
+      }
+    },
+    "android": {
+      "package": "com.thehitmanranjan.frugify"
+    },
+    "splash": {
+      "backgroundColor": "#ffffff"
+    }
+  }
+}

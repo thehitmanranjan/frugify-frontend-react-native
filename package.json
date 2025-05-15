@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "devclient": "expo start --dev-client"
   },
   "dependencies": {
     "@expo/metro-runtime": "~3.1.3",
@@ -29,7 +30,8 @@
     "react-native-svg": "14.1.0",
     "react-native-vector-icons": "^10.0.3",
     "react-native-web": "~0.19.6",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "expo-dev-client": "~3.3.12"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
