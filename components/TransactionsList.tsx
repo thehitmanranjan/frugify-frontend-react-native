@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatTransactionDate } from '../lib/date-utils';
 import { formatTransactionAmount } from '../lib/formatters';
@@ -12,7 +12,7 @@ export default function TransactionsList() {
   const { timeRange, startDate, endDate } = useDate();
   const startDateStr = getQueryTimeFormat(startDate);
   const endDateStr = getQueryTimeFormat(endDate);
-  
+
   const { data: summary, isLoading, isError, error } = useSummary(
     timeRange,
     startDateStr,
@@ -27,7 +27,7 @@ export default function TransactionsList() {
       </View>
     );
   }
-  
+
   if (isError) {
     console.error('Error loading transactions:', error);
     return (
@@ -70,49 +70,52 @@ export default function TransactionsList() {
     <View style={styles.container}>
       <Text style={styles.heading}>Transactions</Text>
       
-      <FlatList
-        data={summary.transactions}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => {
-          // Ensure category exists
-          if (!item.category) {
-            console.warn('Transaction without category:', item.id);
-            return null;
-          }
-          
-          return (
-            <TouchableOpacity style={styles.transactionCard}>
-              <CategoryIcon 
-                name={item.category.icon} 
-                color={item.category.color} 
-                size={18}
-                style={styles.categoryIcon}
-              />
-              <View style={styles.transactionDetails}>
-                <View style={styles.transactionHeader}>
-                  <Text style={styles.categoryName}>{item.category.name}</Text>
-                  <Text 
-                    style={[
-                      styles.amount,
-                      item.category.type === "income" ? styles.incomeText : styles.expenseText
-                    ]}
-                  >
-                    {formatTransactionAmount(item.amount, item.category.type)}
-                  </Text>
-                </View>
-                <View style={styles.transactionFooter}>
-                  <Text style={styles.description}>
-                    {item.description || item.category.name}
-                  </Text>
-                  <Text style={styles.date}>{formatTransactionDate(item.date)}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          );
-        }}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-      />
+      {/* Use a wrapper to ensure proper scrolling on web */}
+      <View style={styles.listWrapper}>
+        <FlatList  
+          data={summary.transactions}  
+          keyExtractor={(item) => item.id.toString()}  
+          renderItem={({ item }) => {  
+            // Ensure category exists  
+            if (!item.category) {  
+              console.warn('Transaction without category:', item.id);  
+              return null;  
+            }  
+              
+            return (  
+              <TouchableOpacity style={styles.transactionCard}>  
+                <CategoryIcon   
+                  name={item.category.icon}   
+                  color={item.category.color}   
+                  size={18}  
+                  style={styles.categoryIcon}  
+                />  
+                <View style={styles.transactionDetails}>  
+                  <View style={styles.transactionHeader}>  
+                    <Text style={styles.categoryName}>{item.category.name}</Text>  
+                    <Text   
+                      style={[  
+                        styles.amount,  
+                        item.category.type === "income" ? styles.incomeText : styles.expenseText  
+                      ]}  
+                    >  
+                      {formatTransactionAmount(item.amount, item.category.type)}  
+                    </Text>  
+                  </View>  
+                  <View style={styles.transactionFooter}>  
+                    <Text style={styles.description}>  
+                      {item.description || item.category.name}  
+                    </Text>  
+                    <Text style={styles.date}>{formatTransactionDate(item.date)}</Text>  
+                  </View>  
+                </View>  
+              </TouchableOpacity>  
+            );  
+          }}  
+          showsVerticalScrollIndicator={true}  
+          contentContainerStyle={styles.listContent}  
+        />  
+      </View>
     </View>
   );
 }
@@ -182,8 +185,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: 'center',
   },
+  // Wrapper to ensure the list takes the right amount of space
+  listWrapper: {
+    flex: 1,
+    ...(Platform.OS === 'web' ? { height: '100%', overflow: 'visible' } : {}),
+  },
   listContent: {
     paddingBottom: 100, // Extra space at the bottom for the FAB
+    ...(Platform.OS === 'web' ? { minHeight: '100%' } : {}),
   },
   transactionCard: {
     flexDirection: 'row',

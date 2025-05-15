@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView, TouchableOpacity, Text } from 'react-native';
-import { FAB } from 'react-native-paper';
+import { View, StyleSheet, SafeAreaView, TouchableOpacity, Text, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -17,19 +16,19 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
-  
+
   const [addTransactionVisible, setAddTransactionVisible] = useState(false);
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
-  
+
   const showAddTransaction = (type: 'expense' | 'income') => {
     setTransactionType(type);
     setAddTransactionVisible(true);
   };
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <Header />
-      
+
       <View style={styles.content}>
         <DateSelector />
         <TimeRangeSelector />
@@ -73,6 +72,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    ...(Platform.OS === 'web' ? { height: '100%', overflow: 'hidden' } : {}),
   },
   fabContainer: {
     position: 'absolute',
