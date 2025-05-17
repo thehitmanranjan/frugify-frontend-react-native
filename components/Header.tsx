@@ -27,7 +27,7 @@ export default function Header() {
           >
             <MaterialCommunityIcons name="menu" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.title}>Monefy Pro</Text>
+          <Text style={styles.title}>Frugify</Text>
         </View>
         <View style={styles.rightContainer}>
           <TouchableOpacity style={styles.iconButton}>
@@ -47,7 +47,7 @@ export default function Header() {
         <View style={styles.drawerOverlay}>
           <View style={styles.drawer}>
             <View style={styles.drawerHeader}>
-              <Text style={styles.drawerTitle}>Monefy Pro</Text>
+              <Text style={styles.drawerTitle}>Frugify</Text>
               <TouchableOpacity 
                 onPress={() => setDrawerVisible(false)}
                 style={styles.closeButton}

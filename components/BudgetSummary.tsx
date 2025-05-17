@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: 'white',
     position: 'relative',
+    minHeight: 220,
   },
   loadingContainer: {
     padding: 24,
