@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView, TouchableOpacity, Text, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -11,6 +11,7 @@ import TimeRangeSelector from '../components/TimeRangeSelector';
 import BudgetSummary from '../components/BudgetSummary';
 import TransactionsList from '../components/TransactionsList';
 import AddTransactionSheet from '../components/AddTransactionSheet';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 

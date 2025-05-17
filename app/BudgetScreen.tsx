@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, Text, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Button, Card, ProgressBar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import CategoryIcon from '../components/CategoryIcon';
 import { useCategories } from '../hooks/useCategories';
 import { formatCurrency } from '../lib/formatters';
 import { apiRequest } from '../lib/apiClient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView, Text, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, Text, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Button, Card, Divider, Switch, Dialog, Portal, TextInput as PaperTextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import Header from '../components/Header';
 import CategoryIcon from '../components/CategoryIcon';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, Category } from '../hooks/useCategories';
 import { RootStackParamList } from '../App';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
