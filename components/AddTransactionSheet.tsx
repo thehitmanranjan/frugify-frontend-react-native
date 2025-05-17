@@ -110,7 +110,7 @@ export default function AddTransactionSheet({
             <View style={styles.formGroup}>
               <Text style={styles.label}>Amount</Text>
               <View style={styles.inputContainer}>
-                <Text style={styles.inputPrefix}>$</Text>
+                <Text style={styles.inputPrefix}>₹</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="0.00"
