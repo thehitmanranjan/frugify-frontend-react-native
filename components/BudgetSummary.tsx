@@ -21,7 +21,7 @@ export default function BudgetSummary() {
   // Log request for debugging
   console.log(`Fetching summary data for ${timeRange} from ${startDateStr} to ${endDateStr}`);
 
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth } = useWindowDimensions(); //This  concept is called property renaming during destructuring
 
   if (isLoading) {
     return (
