@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSummary } from '../hooks/useTransactions';
@@ -11,17 +11,17 @@ export default function BudgetSummary() {
   const { timeRange, startDate, endDate } = useDate();
   const startDateStr = getQueryTimeFormat(startDate);
   const endDateStr = getQueryTimeFormat(endDate);
-  
+
   const { data: summary, isLoading, isError, error } = useSummary(
     timeRange,
     startDateStr,
     endDateStr
   );
-  
+
   // Log request for debugging
   console.log(`Fetching summary data for ${timeRange} from ${startDateStr} to ${endDateStr}`);
 
-  const screenWidth = Dimensions.get('window').width;
+  const { width: screenWidth } = useWindowDimensions();
 
   if (isLoading) {
     return (
@@ -31,7 +31,7 @@ export default function BudgetSummary() {
       </View>
     );
   }
-  
+
   if (isError) {
     console.error('Error loading budget summary:', error);
     return (
@@ -94,22 +94,30 @@ export default function BudgetSummary() {
   return (
     <View style={styles.container}>
       {showChart ? (
-        <PieChart
-          data={chartData}
-          width={screenWidth}
-          height={220}
-          chartConfig={{
-            backgroundColor: '#ffffff',
-            backgroundGradientFrom: '#ffffff',
-            backgroundGradientTo: '#ffffff',
-            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          }}
-          accessor="amount"
-          backgroundColor="transparent"
-          paddingLeft="15"
-          absolute={false}
-          hasLegend={false}
-        />
+        <View>
+          <PieChart
+            data={chartData}
+            width={screenWidth}
+            height={330} // Increased height (220 * 1.5)
+            chartConfig={{
+              backgroundColor: '#ffffff',
+              backgroundGradientFrom: '#ffffff',
+              backgroundGradientTo: '#ffffff',
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            }}
+            accessor="amount"
+            backgroundColor="transparent"
+            paddingLeft="0"
+            center={[screenWidth / 4, 0]} // Center the chart
+            absolute={false}
+            hasLegend={false}
+          />
+          {/* Center hole for doughnut effect */}
+          <View style={[styles.doughnutHole, {
+            top: 165 - 75, // Center vertically (chart height / 2 - radius)
+            left: screenWidth / 2 - 75 , // Center horizontally (screen width / 2 - radius)
+          }]} />
+        </View>
       ) : (
         <View style={styles.noDataContainer}>
           <Text style={styles.noDataText}>No expense data for this period</Text>
@@ -233,5 +241,13 @@ const styles = StyleSheet.create({
   noDataText: {
     color: '#666',
     fontSize: 16,
-  }
+  },
+  doughnutHole: {
+    position: 'absolute',
+    width: 150, // Increased from 100 to 150 (1.5x)
+    height: 150, // Increased from 100 to 150 (1.5x)
+    borderRadius: 75, // Increased from 50 to 75 (1.5x)
+    backgroundColor: 'white',
+    zIndex: 5,
+  },
 });
