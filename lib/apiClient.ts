@@ -13,7 +13,7 @@ const REMOTE_API_URL = 'https://frugify-backend.onrender.com';
 
 // Use local API when on localhost, otherwise use remote API
 // const API_BASE_URL = isLocalhost ? LOCAL_API_URL : REMOTE_API_URL;
-const API_BASE_URL = 'https://frugify-backend.onrender.com';
+const API_BASE_URL = 'https://mithilafoods1.com';
 
 // Log the selected API URL for debugging
 console.log(`Using API base URL: ${API_BASE_URL || 'relative paths (same domain)'}`);
