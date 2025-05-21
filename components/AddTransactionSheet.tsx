@@ -77,7 +77,7 @@ export default function AddTransactionSheet({
         amount: parseFloat(amount),
         categoryId: parseInt(categoryId),
         description: description || undefined,
-        date: new Date(date),
+        date: date,
       });
       onClose();
     } catch (error) {

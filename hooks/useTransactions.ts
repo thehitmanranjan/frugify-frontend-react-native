@@ -86,7 +86,7 @@ export function useCreateTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions/summary'] });
     },
     onError: (error: Error) => {
       console.error('Error creating transaction:', error.message);
