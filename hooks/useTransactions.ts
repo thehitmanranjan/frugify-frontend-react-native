@@ -104,7 +104,7 @@ export function useUpdateTransaction() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/transactions', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions/summary'] });
     },
     onError: (error: Error) => {
       console.error('Error updating transaction:', error.message);
@@ -122,7 +122,7 @@ export function useDeleteTransaction() {
     onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/transactions', id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions/summary'] });
     },
     onError: (error: Error) => {
       console.error('Error deleting transaction:', error.message);

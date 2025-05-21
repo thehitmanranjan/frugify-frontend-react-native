@@ -7,27 +7,35 @@ import { useCreateTransaction } from '../hooks/useTransactions';
 import { format } from 'date-fns';
 import { Calendar } from 'react-native-calendars';
 import CategoryIcon from './CategoryIcon';
+import { useDate } from '../contexts/DateContext';
+
 
 interface AddTransactionSheetProps {
   isVisible: boolean;
   transactionType: 'expense' | 'income';
   onClose: () => void;
+  transaction?: import('../hooks/useTransactions').TransactionWithCategory | null;
 }
 
 export default function AddTransactionSheet({
   isVisible,
   transactionType,
   onClose,
+  transaction,
 }: AddTransactionSheetProps) {
+  const isEditMode = !!transaction;
   const { data: categories, isLoading: isCategoriesLoading } = useCategories(transactionType);
   const createTransaction = useCreateTransaction();
-  
+  const updateTransaction = require('../hooks/useTransactions').useUpdateTransaction();
+  const deleteTransaction = require('../hooks/useTransactions').useDeleteTransaction();
+  const { currentDate } = useDate();
+
   // Form state
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  
+
   // UI state
   const [errors, setErrors] = useState({
     amount: '',
@@ -36,52 +44,65 @@ export default function AddTransactionSheet({
   const [showCalendar, setShowCalendar] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
-  // Reset form when sheet is opened
+  // Prefill form in edit mode
   useEffect(() => {
     if (isVisible) {
-      setAmount('');
-      setCategoryId('');
-      setDescription('');
-      setDate(format(new Date(), 'yyyy-MM-dd'));
-      setErrors({
-        amount: '',
-        categoryId: '',
-      });
+      if (isEditMode && transaction) {
+        setAmount(transaction.amount.toString());
+        setCategoryId(transaction.categoryId.toString());
+        setDescription(transaction.description || '');
+        setDate(format(new Date(transaction.date), 'yyyy-MM-dd'));
+      } else {
+        setAmount('');
+        setCategoryId('');
+        setDescription('');
+        setDate(format(currentDate, 'yyyy-MM-dd'));
+      }
+      setErrors({ amount: '', categoryId: '' });
     }
-  }, [isVisible, transactionType]);
+  }, [isVisible, transactionType, isEditMode, transaction, currentDate]);
 
   const handleSubmit = async () => {
     // Validate form
-    const newErrors = {
-      amount: '',
-      categoryId: '',
-    };
-    
+    const newErrors = { amount: '', categoryId: '' };
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
       newErrors.amount = 'Amount is required and must be a positive number';
     }
-    
     if (!categoryId) {
       newErrors.categoryId = 'Category is required';
     }
-    
     setErrors(newErrors);
-    
-    // If there are errors, don't submit
-    if (newErrors.amount || newErrors.categoryId) {
-      return;
-    }
-    
+    if (newErrors.amount || newErrors.categoryId) return;
     try {
-      await createTransaction.mutateAsync({
-        amount: parseFloat(amount),
-        categoryId: parseInt(categoryId),
-        description: description || undefined,
-        date: date,
-      });
+      if (isEditMode && transaction) {
+        await updateTransaction.mutateAsync({
+          id: transaction.id,
+          amount: parseFloat(amount),
+          categoryId: parseInt(categoryId),
+          description: description || undefined,
+          date: date, // Pass as string
+        });
+      } else {
+        await createTransaction.mutateAsync({
+          amount: parseFloat(amount),
+          categoryId: parseInt(categoryId),
+          description: description || undefined,
+          date: date, // Pass as string
+        });
+      }
       onClose();
     } catch (error) {
-      console.error('Error creating transaction:', error);
+      console.error('Error saving transaction:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!transaction) return;
+    try {
+      await deleteTransaction.mutateAsync(transaction.id);
+      onClose();
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
     }
   };
 
@@ -99,7 +120,9 @@ export default function AddTransactionSheet({
         <View style={styles.sheetContainer}>
           <View style={styles.header}>
             <Text style={styles.title}>
-              Add {transactionType === 'income' ? 'Income' : 'Expense'}
+              {isEditMode
+                ? `Edit ${transactionType === 'income' ? 'Income' : 'Expense'}`
+                : `Add ${transactionType === 'income' ? 'Income' : 'Expense'}`}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <MaterialCommunityIcons name="close" size={24} color="#333" />
@@ -167,18 +190,39 @@ export default function AddTransactionSheet({
               </TouchableOpacity>
             </View>
             
-            <Button
-              mode="contained"
-              onPress={handleSubmit}
-              style={[
-                styles.submitButton,
-                { backgroundColor: transactionType === 'income' ? '#4CAF50' : '#2196F3' }
-              ]}
-              disabled={createTransaction.isPending}
-              loading={createTransaction.isPending}
-            >
-              {createTransaction.isPending ? 'Saving...' : 'Save'}
-            </Button>
+            {isEditMode ? (
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Button
+                  mode="contained"
+                  onPress={handleSubmit}
+                  style={[styles.submitButton, { backgroundColor: transactionType === 'income' ? '#4CAF50' : '#2196F3', flex: 1 }]}
+                  disabled={updateTransaction.isPending}
+                  loading={updateTransaction.isPending}
+                >
+                  {updateTransaction.isPending ? 'Editing...' : 'Edit'}
+                </Button>
+                <Button
+                  mode="outlined"
+                  onPress={handleDelete}
+                  style={[styles.submitButton, { borderColor: '#F44336', flex: 1 }]}
+                  textColor="#F44336"
+                  disabled={deleteTransaction.isPending}
+                  loading={deleteTransaction.isPending}
+                >
+                  {deleteTransaction.isPending ? 'Deleting...' : 'Delete'}
+                </Button>
+              </View>
+            ) : (
+              <Button
+                mode="contained"
+                onPress={handleSubmit}
+                style={[styles.submitButton, { backgroundColor: transactionType === 'income' ? '#4CAF50' : '#2196F3' }]}
+                disabled={createTransaction.isPending}
+                loading={createTransaction.isPending}
+              >
+                {createTransaction.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            )}
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -247,7 +291,7 @@ export default function AddTransactionSheet({
             
             <Calendar
               current={date}
-              onDayPress={(day) => {
+              onDayPress={(day: { dateString: string }) => {
                 setDate(day.dateString);
                 setShowCalendar(false);
               }}

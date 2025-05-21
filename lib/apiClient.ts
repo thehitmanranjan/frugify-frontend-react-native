@@ -1,19 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 
-// Base API URL - Use local backend when running on localhost
-// const isLocalhost = typeof window !== 'undefined' && (
-//   window.location.hostname === 'localhost' || 
-//   window.location.hostname === '127.0.0.1' ||
-//   window.location.hostname.includes('replit.app')
-// );
-
-// Base API URLs
-const LOCAL_API_URL = 'https://frugify-backend.onrender.com'; // Empty string for relative URLs on the same domain
-const REMOTE_API_URL = 'https://frugify-backend.onrender.com';
-
-// Use local API when on localhost, otherwise use remote API
-// const API_BASE_URL = isLocalhost ? LOCAL_API_URL : REMOTE_API_URL;
-const API_BASE_URL = 'https://mithilafoods1.com';
+// const API_BASE_URL = 'https://mithilafoods1.com';
+const API_BASE_URL = 'https://frugify-backend.onrender.com';
 
 // Log the selected API URL for debugging
 console.log(`Using API base URL: ${API_BASE_URL || 'relative paths (same domain)'}`);
@@ -123,10 +111,7 @@ export const queryClient = new QueryClient({
       retry: 2,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       staleTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnWindowFocus: false,
-      onError: (error) => {
-        console.error('Query error:', error);
-      }
+      refetchOnWindowFocus: false
     },
     mutations: {
       retry: 1,

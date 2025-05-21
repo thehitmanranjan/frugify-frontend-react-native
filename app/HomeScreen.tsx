@@ -26,9 +26,17 @@ export default function HomeScreen() {
 
   const [addTransactionVisible, setAddTransactionVisible] = useState(false);
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
+  const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithCategory | null>(null);
 
   const showAddTransaction = (type: 'expense' | 'income') => {
     setTransactionType(type);
+    setSelectedTransaction(null);
+    setAddTransactionVisible(true);
+  };
+
+  const showEditTransaction = (transaction: TransactionWithCategory) => {
+    setTransactionType(transaction.category.type === 'income' ? 'income' : 'expense');
+    setSelectedTransaction(transaction);
     setAddTransactionVisible(true);
   };
 
@@ -56,7 +64,7 @@ export default function HomeScreen() {
   const renderTransaction = ({ item }: { item: TransactionWithCategory }) => {
     if (!item.category) return null;
     return (
-      <TouchableOpacity style={styles.transactionCard}>
+      <TouchableOpacity style={styles.transactionCard} onPress={() => showEditTransaction(item)}>
         <CategoryIcon
           name={item.category.icon}
           color={item.category.color}
@@ -185,6 +193,7 @@ export default function HomeScreen() {
         isVisible={addTransactionVisible}
         transactionType={transactionType}
         onClose={() => setAddTransactionVisible(false)}
+        transaction={selectedTransaction}
       />
     </SafeAreaView>
   );
