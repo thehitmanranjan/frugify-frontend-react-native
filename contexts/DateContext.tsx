@@ -14,6 +14,7 @@ interface DateContextType {
   goToPreviousPeriod: () => void;
   goToNextPeriod: () => void;
   resetToToday: () => void;
+  setCurrentDate: (date: Date) => void;
 }
 
 // Create context with default values
@@ -27,6 +28,7 @@ const DateContext = createContext<DateContextType>({
   goToPreviousPeriod: () => {},
   goToNextPeriod: () => {},
   resetToToday: () => {},
+  setCurrentDate: () => {},
 });
 
 export function DateProvider({ children }: { children: ReactNode }) {
@@ -97,6 +99,7 @@ export function DateProvider({ children }: { children: ReactNode }) {
         goToPreviousPeriod,
         goToNextPeriod,
         resetToToday,
+        setCurrentDate, 
       }}
     >
       {children}

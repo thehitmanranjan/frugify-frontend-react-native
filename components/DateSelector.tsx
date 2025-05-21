@@ -13,13 +13,14 @@ export default function DateSelector() {
     formattedPeriod,
     goToPreviousPeriod, 
     goToNextPeriod,
-    resetToToday
+    resetToToday,
+    setCurrentDate
   } = useDate();
 
   const handleDateSelect = (date: any) => {
     // Format from YYYY-MM-DD to a Date object
     const selectedDate = new Date(date.dateString);
-    resetToToday(); // This will reset to today but we'll update immediately after
+    setCurrentDate(selectedDate);
     setCalendarVisible(false);
   };
 
