@@ -86,7 +86,10 @@ export function useCreateTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions/summary'] });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/transactions/summary'],
+        exact: false // This will match all keys that start with this prefix
+      });
     },
     onError: (error: Error) => {
       console.error('Error creating transaction:', error.message);
@@ -104,7 +107,10 @@ export function useUpdateTransaction() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/transactions', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions/summary'] });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/transactions/summary'],
+        exact: false // This will match all keys that start with this prefix
+      });
     },
     onError: (error: Error) => {
       console.error('Error updating transaction:', error.message);
@@ -122,7 +128,10 @@ export function useDeleteTransaction() {
     onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/transactions', id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions/summary'] });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/transactions/summary'],
+        exact: false // This will match all keys that start with this prefix
+      });
     },
     onError: (error: Error) => {
       console.error('Error deleting transaction:', error.message);
