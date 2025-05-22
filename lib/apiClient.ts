@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 
-// const API_BASE_URL = 'https://mithilafoods1.com';
-const API_BASE_URL = 'https://frugify-backend.onrender.com';
+const API_BASE_URL = 'https://mithilafoods1.com';
+// const API_BASE_URL = 'https://frugify-backend.onrender.com';
 
 // Log the selected API URL for debugging
 console.log(`Using API base URL: ${API_BASE_URL || 'relative paths (same domain)'}`);
