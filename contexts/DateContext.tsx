@@ -33,7 +33,7 @@ const DateContext = createContext<DateContextType>({
 
 export function DateProvider({ children }: { children: ReactNode }) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [timeRange, setTimeRange] = useState<TimeRange>('month');
+  const [timeRange, setTimeRange] = useState<TimeRange>('day');
 
   // Calculate start and end dates based on current date and time range
   const { startDate, endDate } = getDateRange(currentDate, timeRange);
