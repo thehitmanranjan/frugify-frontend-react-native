@@ -33,7 +33,8 @@
     "zod": "^3.22.4",
     "expo-dev-client": "~3.3.12",
     "expo-auth-session": "~5.4.0",
-    "expo-random": "~13.6.0"
+    "expo-random": "~13.6.0",
+    "expo-web-browser": "~12.8.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

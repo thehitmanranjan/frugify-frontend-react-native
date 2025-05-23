@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 
+import Auth from '../components/Auth'; // Added Auth import
 import Header from '../components/Header';
 import DateSelector from '../components/DateSelector';
 import TimeRangeSelector from '../components/TimeRangeSelector';
@@ -97,6 +98,7 @@ export default function HomeScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <Header />
+        <Auth />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#2196F3" />
           <Text style={styles.loadingText}>Loading transactions...</Text>
@@ -110,6 +112,7 @@ export default function HomeScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <Header />
+        <Auth />
         <View style={styles.errorContainer}>
           <MaterialCommunityIcons name="alert-circle" size={40} color="#F44336" />
           <Text style={styles.errorText}>There was a problem loading your transactions.</Text>
@@ -124,6 +127,7 @@ export default function HomeScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <Header />
+        <Auth />
         <View style={styles.content}>
           {renderListHeader()}
           <View style={styles.emptyContainer}>
@@ -161,6 +165,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Header />
+      <Auth />
       <View style={styles.content}>
         <FlatList
           data={summary.transactions}
