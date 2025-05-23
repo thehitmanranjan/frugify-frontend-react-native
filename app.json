@@ -3,7 +3,8 @@
     "extra": {
       "eas": {
         "projectId": "14a5d0ff-8ab5-45f8-bce3-774f9ffe52b4"
-      }
+      },
+      "expoClientId": "1042181285212-4pev875v2hdg30qffjcrfgj2ku4a0m0j.apps.googleusercontent.com"
     },
     "android": {
       "package": "com.thehitmanranjan.frugify"
