@@ -1,14 +1,11 @@
 import { QueryClient } from '@tanstack/react-query';
 
 const API_BASE_URL = 'https://mithilafoods1.com';
-// const API_BASE_URL = 'https://frugify-backend.onrender.com';
+// const API_BASE_URL = 'http://localhost:3000'; // Uncomment for local development
+
 
 // Log the selected API URL for debugging
 console.log(`Using API base URL: ${API_BASE_URL || 'relative paths (same domain)'}`);
-
-// Configure a proxy if needed (for local development)
-const USE_PROXY = false; // Set to true if you're testing locally
-const PROXY_URL = '/api'; // Local proxy path
 
 /**
  * Helper to throw errors for non-2xx responses
@@ -37,7 +34,7 @@ export async function apiRequest<T>(
   options?: RequestInit
 ): Promise<T> {
   // Determine API URL based on proxy setting
-  const baseUrl = USE_PROXY ? PROXY_URL : API_BASE_URL;
+  const baseUrl = API_BASE_URL;
   const url = `${baseUrl}${endpoint}`;
   
   console.log(`API Request: ${method} ${url}`);

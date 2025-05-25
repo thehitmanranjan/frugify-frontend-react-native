@@ -4,15 +4,18 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 
 // Screens
 import HomeScreen from './app/HomeScreen';
+import LoginScreen from './app/LoginScreen';
 import BudgetScreen from './app/BudgetScreen';
 import SettingsScreen from './app/SettingsScreen';
+import SignupScreen from './app/SignupScreen';
 
 // Context
 import { DateProvider } from './contexts/DateContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // API Client
 import { queryClient } from './lib/apiClient';
@@ -27,24 +30,117 @@ export type RootStackParamList = {
 // Create the stack navigator
 const Stack = createStackNavigator<RootStackParamList>();
 
+// Main App Navigator (for authenticated users)
+const AppNavigator = () => (
+  <Stack.Navigator
+    initialRouteName="Home"
+    screenOptions={{
+      headerShown: false,
+    }}
+  >
+    <Stack.Screen name="Home" component={HomeScreen} />
+    <Stack.Screen name="Budget" component={BudgetScreen} />
+    <Stack.Screen name="Settings" component={SettingsScreen} />
+  </Stack.Navigator>
+);
+
+// Component to handle conditional rendering based on auth state
+const AppContent = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [showSignup, setShowSignup] = React.useState(false);
+  const [signupPrompt, setSignupPrompt] = React.useState(false);
+
+  // Custom login handler to show signup prompt if user not found
+  const LoginWithSignupPrompt = () => {
+    const { login } = useAuth();
+    const [username, setUsername] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [loading, setLoading] = React.useState(false);
+
+    const handleLogin = async () => {
+      if (!username.trim() || !password.trim()) {
+        Alert.alert('Validation Error', 'Username and password cannot be empty.');
+        return;
+      }
+      setLoading(true);
+      try {
+        await login(username, password);
+      } catch (error: any) {
+        if (error?.message?.includes('User not found') || error?.message?.includes('404')) {
+          setSignupPrompt(true);
+        } else {
+          Alert.alert('Login Failed', error?.message || 'An error occurred during login.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Login</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+          <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Submit'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setShowSignup(true)} style={{ marginTop: 16 }}>
+          <Text style={{ color: '#007bff' }}>Don't have an account? Sign up</Text>
+        </TouchableOpacity>
+        {signupPrompt && (
+          <View style={{ marginTop: 20 }}>
+            <Text style={{ color: 'red', marginBottom: 8 }}>User does not exist. Would you like to sign up?</Text>
+            <TouchableOpacity style={styles.button} onPress={() => { setShowSignup(true); setSignupPrompt(false); }}>
+              <Text style={styles.buttonText}>Sign Up</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      {isAuthenticated ? (
+        <AppNavigator />
+      ) : showSignup ? (
+        <SignupScreen onSignupSuccess={() => setShowSignup(false)} />
+      ) : (
+        <LoginWithSignupPrompt />
+      )}
+      <StatusBar style="auto" />
+    </NavigationContainer>
+  );
+};
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <PaperProvider>
         <DateProvider>
-          <NavigationContainer>
-            <Stack.Navigator
-              initialRouteName="Home"
-              screenOptions={{
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen name="Home" component={HomeScreen} />
-              <Stack.Screen name="Budget" component={BudgetScreen} />
-              <Stack.Screen name="Settings" component={SettingsScreen} />
-            </Stack.Navigator>
-            <StatusBar style="auto" />
-          </NavigationContainer>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </DateProvider>
       </PaperProvider>
     </QueryClientProvider>
@@ -52,8 +148,45 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  // container style is not strictly necessary here as App component just returns providers
+  // but keeping it doesn't harm.
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5', // Optional: a background for loading screen
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 15,
+  },
+  button: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#007bff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });

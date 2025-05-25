@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'; // Added ScrollView
 import { useNavigation } from '@react-navigation/native';
-import { Drawer } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext'; // Import useAuth
 import { StackNavigationProp } from '@react-navigation/stack';
 
 type RootStackParamList = {
@@ -15,6 +15,7 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function Header() {
   const navigation = useNavigation<NavigationProp>();
+  const { logout } = useAuth(); // Get logout function
   const [drawerVisible, setDrawerVisible] = useState(false);
 
   return (
@@ -56,38 +57,55 @@ export default function Header() {
               </TouchableOpacity>
             </View>
             
-            <TouchableOpacity 
-              style={styles.drawerItem}
-              onPress={() => {
-                navigation.navigate('Home');
-                setDrawerVisible(false);
-              }}
-            >
-              <Text style={styles.drawerItemText}>Dashboard</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.drawerItem}
-              onPress={() => {
-                navigation.navigate('Budget');
-                setDrawerVisible(false);
-              }}
-            >
-              <Text style={styles.drawerItemText}>Budget</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.drawerItem}
-              onPress={() => {
-                navigation.navigate('Settings');
-                setDrawerVisible(false);
-              }}
-            >
-              <Text style={styles.drawerItemText}>Settings</Text>
-            </TouchableOpacity>
+            <ScrollView>
+              <TouchableOpacity 
+                style={styles.drawerItem}
+                onPress={() => {
+                  navigation.navigate('Home');
+                  setDrawerVisible(false);
+                }}
+              >
+                <MaterialCommunityIcons name="view-dashboard" size={22} color="#555" style={styles.drawerIcon} />
+                <Text style={styles.drawerItemText}>Dashboard</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.drawerItem}
+                onPress={() => {
+                  navigation.navigate('Budget');
+                  setDrawerVisible(false);
+                }}
+              >
+                <MaterialCommunityIcons name="wallet" size={22} color="#555" style={styles.drawerIcon} />
+                <Text style={styles.drawerItemText}>Budget</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.drawerItem}
+                onPress={() => {
+                  navigation.navigate('Settings');
+                  setDrawerVisible(false);
+                }}
+              >
+                <MaterialCommunityIcons name="cog" size={22} color="#555" style={styles.drawerIcon} />
+                <Text style={styles.drawerItemText}>Settings</Text>
+              </TouchableOpacity>
+
+              {/* Logout Button */}
+              <TouchableOpacity 
+                style={styles.drawerItem}
+                onPress={async () => {
+                  await logout(); 
+                  setDrawerVisible(false);
+                }}
+              >
+                <MaterialCommunityIcons name="logout" size={22} color="#555" style={styles.drawerIcon} />
+                <Text style={styles.drawerItemText}>Logout</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
           
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.drawerOutside}
             onPress={() => setDrawerVisible(false)}
           />
@@ -167,13 +185,19 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   drawerItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    flexDirection: 'row', // Align icon and text
+    alignItems: 'center', // Center items vertically
+    paddingVertical: 15, 
+    paddingHorizontal: 12,
     borderRadius: 6,
-    marginBottom: 6,
+    marginBottom: 8, 
+  },
+  drawerIcon: {
+    marginRight: 15, // Space between icon and text
   },
   drawerItemText: {
     fontSize: 16,
     fontWeight: '500',
+    color: '#333', 
   },
 });
