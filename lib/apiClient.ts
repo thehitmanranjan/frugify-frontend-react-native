@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = 'https://mithilafoods1.com';
 // const API_BASE_URL = 'http://localhost:3000'; // Uncomment for local development
@@ -38,12 +39,30 @@ export async function apiRequest<T>(
   const url = `${baseUrl}${endpoint}`;
   
   console.log(`API Request: ${method} ${url}`);
-  
+
+  // Retrieve token from AsyncStorage
+  let token: string | null = null;
+  try {
+    const tokenDataString = await AsyncStorage.getItem('userToken');
+    if (tokenDataString) {
+      // If token is stored as JSON, parse it, else use as string
+      try {
+        const tokenData = JSON.parse(tokenDataString);
+        token = typeof tokenData === 'string' ? tokenData : tokenData.token;
+      } catch {
+        token = tokenDataString;
+      }
+    }
+  } catch (e) {
+    console.error('Error retrieving token from AsyncStorage', e);
+  }
+
   const config: RequestInit = {
     method,
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
     // In web browsers, 'include' can cause CORS issues, 'same-origin' is safer
     credentials: 'same-origin',
