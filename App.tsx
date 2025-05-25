@@ -4,14 +4,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, ActivityIndicator, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Touchable, TouchableWithoutFeedback, Keyboard } from 'react-native';
 
 // Screens
-import HomeScreen from './app/HomeScreen';
-import LoginScreen from './app/LoginScreen';
-import BudgetScreen from './app/BudgetScreen';
-import SettingsScreen from './app/SettingsScreen';
-import SignupScreen from './app/SignupScreen';
+import HomeScreen from './screens/HomeScreen';
+import BudgetScreen from './screens/BudgetScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import SignupScreen from './screens/SignupScreen';
 
 // Context
 import { DateProvider } from './contexts/DateContext';
@@ -45,7 +44,7 @@ const AppNavigator = () => (
 );
 
 // Component to handle conditional rendering based on auth state
-const AppContent = () => {
+const MainScreen = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [showSignup, setShowSignup] = React.useState(false);
   const [signupPrompt, setSignupPrompt] = React.useState(false);
@@ -69,7 +68,7 @@ const AppContent = () => {
         if (error?.message?.includes('User not found') || error?.message?.includes('404')) {
           setSignupPrompt(true);
         } else {
-          Alert.alert('Login Failed', error?.message || 'An error occurred during login.');
+          Alert.alert('Login Failed in App.tsx', error?.message || 'An error occurred during login.');
         }
       } finally {
         setLoading(false);
@@ -77,37 +76,44 @@ const AppContent = () => {
     };
 
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Login</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Username"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Submit'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setShowSignup(true)} style={{ marginTop: 16 }}>
-          <Text style={{ color: '#007bff' }}>Don't have an account? Sign up</Text>
-        </TouchableOpacity>
-        {signupPrompt && (
-          <View style={{ marginTop: 20 }}>
-            <Text style={{ color: 'red', marginBottom: 8 }}>User does not exist. Would you like to sign up?</Text>
-            <TouchableOpacity style={styles.button} onPress={() => { setShowSignup(true); setSignupPrompt(false); }}>
-              <Text style={styles.buttonText}>Sign Up</Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined} // Adjust for iOS keyboard handling
+      >
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+          <View style={styles.container}>
+            <Text style={styles.title}>Login</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+              <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Submit'}</Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowSignup(true)} style={{ marginTop: 16 }}>
+              <Text style={{ color: '#007bff' }}>Don't have an account? Sign up</Text>
+            </TouchableOpacity>
+            {signupPrompt && (
+              <View style={{ marginTop: 20 }}>
+                <Text style={{ color: 'red', marginBottom: 8 }}>User does not exist. Would you like to sign up?</Text>
+                <TouchableOpacity style={styles.button} onPress={() => { setShowSignup(true); setSignupPrompt(false); }}>
+                  <Text style={styles.buttonText}>Sign Up</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-        )}
-      </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     );
   };
 
@@ -139,7 +145,7 @@ export default function App() {
       <PaperProvider>
         <DateProvider>
           <AuthProvider>
-            <AppContent />
+            <MainScreen />
           </AuthProvider>
         </DateProvider>
       </PaperProvider>
@@ -153,6 +159,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   centered: {
     flex: 1,

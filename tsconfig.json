@@ -8,7 +8,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@app/*": ["./app/*"],
+      "@app/*": ["screens/*"],
       "@components/*": ["./components/*"],
       "@hooks/*": ["./hooks/*"],
       "@contexts/*": ["./contexts/*"],

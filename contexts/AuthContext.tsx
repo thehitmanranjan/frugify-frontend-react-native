@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest } from '../lib/apiClient';
-import { jwtDecode } from 'jwt-decode';
 interface AuthContextData {
   isAuthenticated: boolean;
   userToken: string | null;
@@ -52,8 +51,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       );
 
       const token = response.token;
-      const decoded = jwtDecode(token);
-      // const expiry = decoded?.exp || new Date().getTime() + 30 * 24 * 60 * 60 * 1000; // fallback: 30 days
       await AsyncStorage.setItem('userToken', JSON.stringify(token));
       setUserToken(token);
       setIsAuthenticated(true);
