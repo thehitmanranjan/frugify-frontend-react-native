@@ -49,10 +49,27 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         '/api/user/login',
         { username, password }
       );
-
+      
       const token = response.token;
-      await AsyncStorage.setItem('userToken', JSON.stringify(token));
-      setUserToken(token);
+      console.log('Login successful, token:', token);
+      // Decode JWT to extract expiry (exp) in seconds, convert to ms
+      function parseJwt (token: string) {
+        try {
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          return JSON.parse(jsonPayload);
+        } catch (e) {
+          return {};
+        }
+      }
+      const payload = parseJwt(token);
+      const expiry = payload.exp ? payload.exp * 1000 : (new Date().getTime() + 7 * 24 * 60 * 60 * 1000);
+      const tokenData = { token, expiry };
+      await AsyncStorage.setItem('userToken', JSON.stringify(tokenData));
+      setUserToken(token); //updates the in-memory state immediately, so the app can react to the login right away
       setIsAuthenticated(true);
     } catch (e) {
       console.error('Login failed:', e);
