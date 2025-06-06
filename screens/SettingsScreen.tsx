@@ -49,6 +49,27 @@ const iconOptions = [
   { name: 'gift', label: 'Gifts' },
   { name: 'banknote', label: 'Income' },
   { name: 'trending-up', label: 'Investments' },
+  { name: 'shower', label: 'Body Care' },
+  { name: 'car', label: 'Cab' },
+  { name: 'tshirt-crew', label: 'Clothes' },
+  { name: 'cellphone', label: 'Communications' },
+  { name: 'hand-heart', label: 'Donation' },
+  { name: 'silverware-fork-knife', label: 'Eating Out' },
+  { name: 'food', label: 'Ordered Food' },
+  { name: 'account-group', label: 'Family' },
+  { name: 'gas-station', label: 'Fuel' },
+  { name: 'laptop', label: 'Gadgets' },
+  { name: 'heart-pulse', label: 'Health' },
+  { name: 'hotel', label: 'Hotel' },
+  { name: 'airplane', label: 'Trip' },
+  { name: 'sofa', label: 'House Decor' },
+  { name: 'dots-horizontal', label: 'Miscellaneous' },
+  { name: 'parking', label: 'Parking' },
+  { name: 'flower-tulip', label: 'Puja' },
+  { name: 'monitor', label: 'Tech' },
+  { name: 'school', label: 'Study' },
+  { name: 'flash', label: 'Utilities' },
+  { name: 'delete', label: 'Waste' },
 ];
 
 interface CategoryItemProps {
@@ -238,55 +259,60 @@ export default function SettingsScreen() {
       
       {/* Add/Edit Category Dialog */}
       <Portal>
-        <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>
+        <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)} style={{ maxHeight: '90%' }}>
           <Dialog.Title>
             {editingCategory ? 'Edit Category' : 'Add Category'}
           </Dialog.Title>
-          
-          <Dialog.Content>
-            <PaperTextInput
-              label="Category Name"
-              value={categoryName}
-              onChangeText={setCategoryName}
-              style={styles.input}
-            />
-            
-            <Text style={styles.sectionTitle}>Color</Text>
-            <View style={styles.colorGrid}>
-              {colorOptions.map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: color },
-                    selectedColor === color && styles.selectedColorOption,
-                  ]}
-                  onPress={() => setSelectedColor(color)}
-                />
-              ))}
-            </View>
-            
-            <Text style={styles.sectionTitle}>Icon</Text>
-            <View style={styles.iconGrid}>
-              {iconOptions.map((icon) => (
-                <TouchableOpacity
-                  key={icon.name}
-                  style={[
-                    styles.iconOption,
-                    selectedIcon === icon.name && styles.selectedIconOption,
-                  ]}
-                  onPress={() => setSelectedIcon(icon.name)}
-                >
-                  <CategoryIcon 
-                    name={icon.name} 
-                    color={selectedIcon === icon.name ? selectedColor : '#ccc'} 
-                    size={16}
+          <View style={{ maxHeight: 400 }}>
+            <FlatList
+              data={[1]}
+              renderItem={() => (
+                <Dialog.Content>
+                  <PaperTextInput
+                    label="Category Name"
+                    value={categoryName}
+                    onChangeText={setCategoryName}
+                    style={styles.input}
                   />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </Dialog.Content>
-          
+                  <Text style={styles.sectionTitle}>Color</Text>
+                  <View style={styles.colorGrid}>
+                    {colorOptions.map((color) => (
+                      <TouchableOpacity
+                        key={color}
+                        style={[
+                          styles.colorOption,
+                          { backgroundColor: color },
+                          selectedColor === color && styles.selectedColorOption,
+                        ]}
+                        onPress={() => setSelectedColor(color)}
+                      />
+                    ))}
+                  </View>
+                  <Text style={styles.sectionTitle}>Icon</Text>
+                  <View style={styles.iconGrid}>
+                    {iconOptions.map((icon) => (
+                      <TouchableOpacity
+                        key={icon.name}
+                        style={[
+                          styles.iconOption,
+                          selectedIcon === icon.name && styles.selectedIconOption,
+                        ]}
+                        onPress={() => setSelectedIcon(icon.name)}
+                      >
+                        <CategoryIcon 
+                          name={icon.name} 
+                          color={selectedIcon === icon.name ? selectedColor : '#ccc'} 
+                          size={16}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </Dialog.Content>
+              )}
+              keyExtractor={() => 'dialog-content'}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
           <Dialog.Actions>
             <Button onPress={() => setDialogVisible(false)}>Cancel</Button>
             <Button onPress={handleSaveCategory}>Save</Button>
@@ -300,7 +326,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f9f9f9',
   },
   content: {
     flex: 1,
@@ -313,27 +339,28 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2196F3',
+    backgroundColor: '#007bff',
+    borderRadius: 4,
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
   },
   addButtonText: {
     color: 'white',
-    fontWeight: '500',
-    marginLeft: 4,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
   tabContainer: {
     flexDirection: 'row',
-    marginBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#ddd',
+    marginBottom: 16,
   },
   tab: {
     flex: 1,
@@ -342,35 +369,37 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#2196F3',
+    borderBottomColor: '#007bff',
   },
   tabText: {
-    color: '#666',
+    color: '#333',
     fontWeight: '500',
-    fontSize: 16,
   },
   activeTabText: {
-    color: '#2196F3',
-  },
-  listContent: {
-    paddingBottom: 20,
+    color: '#007bff',
+    fontWeight: 'bold',
   },
   categoryCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    elevation: 1,
     marginBottom: 12,
-    padding: 12,
   },
   categoryContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 16,
   },
   categoryInfo: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
   categoryName: {
     marginLeft: 8,
     fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
   },
   categoryActions: {
     flexDirection: 'row',
@@ -378,59 +407,69 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 8,
-    marginLeft: 4,
   },
   emptyContainer: {
-    padding: 24,
-    alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'white',
-    borderRadius: 8,
+    alignItems: 'center',
   },
   emptyText: {
-    fontSize: 16,
     color: '#666',
-    textAlign: 'center',
+    fontSize: 16,
+  },
+  listContent: {
+    paddingBottom: 16,
   },
   input: {
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '500',
-    marginTop: 16,
+    fontWeight: 'bold',
+    color: 'white',
     marginBottom: 8,
   },
   colorGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -4,
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   colorOption: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    margin: 4,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#fff',
+    backgroundColor: '#eee',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   selectedColorOption: {
-    borderWidth: 2,
-    borderColor: '#000',
+    borderWidth: 3,
+    borderColor: '#007bff',
+    backgroundColor: '#fff',
+    shadowColor: '#007bff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   iconGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -4,
+    justifyContent: 'space-between',
   },
   iconOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    margin: 4,
+    width: '22%',
+    aspectRatio: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    marginBottom: 16,
   },
   selectedIconOption: {
-    backgroundColor: '#e0e0e0',
+    borderWidth: 2,
+    borderColor: '#007bff',
   },
 });

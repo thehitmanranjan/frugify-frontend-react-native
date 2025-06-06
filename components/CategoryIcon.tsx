@@ -24,6 +24,27 @@ const iconMap: { [key: string]: string } = {
   'shopping-bag': 'shopping',
   'trending-up': 'trending-up',
   utensils: 'silverware-fork-knife',
+  shower: 'shower', 
+  car: 'car', 
+  'tshirt-crew': 'tshirt-crew', 
+  cellphone: 'cellphone', 
+  'hand-heart': 'hand-heart',
+  'silverware-fork-knife': 'silverware-fork-knife',
+  food: 'food',
+  'account-group': 'account-group',
+  'gas-station': 'gas-station',
+  laptop: 'laptop', 
+  'heart-pulse': 'heart-pulse',
+  hotel: 'bed', 
+  airplane: 'airplane', 
+  sofa: 'sofa', 
+  'dots-horizontal': 'dots-horizontal',
+  parking: 'parking',
+  'flower-tulip': 'flower-tulip', 
+  monitor: 'monitor',
+  school: 'school', 
+  flash: 'flash',
+  delete: 'delete', 
 };
 
 export default function CategoryIcon({
@@ -33,7 +54,7 @@ export default function CategoryIcon({
   style
 }: CategoryIconProps) {
   // Get the icon name from our map or use a default
-  const iconName = iconMap[name] || 'help-circle';
+  const iconName = (iconMap[name] || 'help-circle') as React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
   return (
     <View style={[styles.container, { backgroundColor: color }, style]}>
