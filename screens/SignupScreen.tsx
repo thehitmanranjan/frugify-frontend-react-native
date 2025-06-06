@@ -8,12 +8,15 @@ import {
   Alert,
 } from 'react-native';
 import { apiRequest } from '../lib/apiClient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const SignupScreen: React.FC<{ onSignupSuccess: () => void }> = ({ onSignupSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSignup = async () => {
     if (!username.trim() || !password.trim() || !confirmPassword.trim()) {
@@ -46,20 +49,46 @@ const SignupScreen: React.FC<{ onSignupSuccess: () => void }> = ({ onSignupSucce
         onChangeText={setUsername}
         autoCapitalize="none"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
+      <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
+        <TextInput
+          style={[styles.input, { flex: 1, marginBottom: 0 }]}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+        />
+        <TouchableOpacity
+          onPress={() => setShowPassword((prev) => !prev)}
+          style={{ position: 'absolute', right: 20, padding: 8 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <MaterialCommunityIcons
+            name={showPassword ? 'eye-off' : 'eye'}
+            size={24}
+            color="#888"
+          />
+        </TouchableOpacity>
+      </View>
+      <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
+        <TextInput
+          style={[styles.input, { flex: 1, marginBottom: 0 }]}
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry={!showConfirmPassword}
+        />
+        <TouchableOpacity
+          onPress={() => setShowConfirmPassword((prev) => !prev)}
+          style={{ position: 'absolute', right: 20, padding: 8 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <MaterialCommunityIcons
+            name={showConfirmPassword ? 'eye-off' : 'eye'}
+            size={24}
+            color="#888"
+          />
+        </TouchableOpacity>
+      </View>
       <TouchableOpacity style={styles.button} onPress={handleSignup} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? 'Signing Up...' : 'Sign Up'}</Text>
       </TouchableOpacity>

@@ -5,6 +5,7 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Touchable, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Screens
 import HomeScreen from './screens/HomeScreen';
@@ -56,6 +57,7 @@ const MainScreen = () => {
     const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [loading, setLoading] = React.useState(false);
+    const [showPassword, setShowPassword] = React.useState(false);
 
     const handleLogin = async () => {
       if (!username.trim() || !password.trim()) {
@@ -91,13 +93,26 @@ const MainScreen = () => {
               onChangeText={setUsername}
               autoCapitalize="none"
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+            <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword((prev) => !prev)}
+                style={{ position: 'absolute', right: 20, padding: 8 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <MaterialCommunityIcons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="#888"
+                />
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
               <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Submit'}</Text>
             </TouchableOpacity>
