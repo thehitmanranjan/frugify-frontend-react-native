@@ -18,6 +18,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // API Client
 import { queryClient } from './lib/apiClient';
+import { navigationRef } from './lib/RootNavigation';
 
 // Types
 export type RootStackParamList = {
@@ -126,7 +127,7 @@ const MainScreen = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       {isAuthenticated ? (
         <AppNavigator />
       ) : showSignup ? (
