@@ -4,7 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const API_BASE_URL = 'https://mithilafoods1.com';
 // const API_BASE_URL = 'http://localhost:3000'; // Uncomment for local development
 
-const AI_BASE_URL = 'http://localhost:8000'; // Base URL for AI-related endpoints
+const AI_BASE_URL = 'https://frugify.in'; // Base URL for AI-related endpoints
+// const AI_BASE_URL = 'http://localhost:8000'; // Uncomment for local development
+
 
 
 // Log the selected API URL for debugging
