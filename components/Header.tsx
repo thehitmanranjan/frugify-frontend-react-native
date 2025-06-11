@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'; // Added ScrollView
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext'; // Import useAuth
 import { StackNavigationProp } from '@react-navigation/stack';
+import SmsModal from './SmsModal';
+import { getInstallDate, getLastOpenDate, setLastOpenDate } from '../lib/appDates';
+import { useUnreadSms } from '../hooks/useUnreadSms';
 
 type RootStackParamList = {
   Home: undefined;
@@ -17,6 +20,24 @@ export default function Header() {
   const navigation = useNavigation<NavigationProp>();
   const { logout } = useAuth(); // Get logout function
   const [drawerVisible, setDrawerVisible] = useState(false);
+  // SMS modal state
+  const [smsModalVisible, setSmsModalVisible] = useState(false);
+  const [smsSince, setSmsSince] = useState<number>(Date.now());
+  const [lastOpen, setLastOpen] = useState<number | null>(null);
+
+  // On mount, get install date and last open date, update last open date
+  useEffect(() => {
+    (async () => {
+      const installDate = await getInstallDate();
+      const last = await getLastOpenDate();
+      setSmsSince(last || installDate);
+      setLastOpen(Date.now());
+      await setLastOpenDate(Date.now());
+    })();
+  }, []);
+
+  // Fetch unread SMS since last open or install date
+  const { messages, loading, error } = useUnreadSms(smsSince);
 
   return (
     <>
@@ -31,6 +52,9 @@ export default function Header() {
           <Text style={styles.title}>Frugify</Text>
         </View>
         <View style={styles.rightContainer}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => setSmsModalVisible(true)}>
+            <MaterialCommunityIcons name="email" size={24} color="#333" />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
             <MaterialCommunityIcons name="magnify" size={24} color="#333" />
           </TouchableOpacity>
@@ -42,7 +66,7 @@ export default function Header() {
           </TouchableOpacity>
         </View>
       </View>
-      
+      <SmsModal visible={smsModalVisible} onClose={() => setSmsModalVisible(false)} messages={messages} loading={loading} error={error} />
       {/* Side Drawer */}
       {drawerVisible && (
         <View style={styles.drawerOverlay}>
