@@ -10,6 +10,7 @@ import DateSelector from '../components/DateSelector';
 import TimeRangeSelector from '../components/TimeRangeSelector';
 import BudgetSummary from '../components/BudgetSummary';
 import AddTransactionSheet from '../components/AddTransactionSheet';
+import SpeechToTextSheet from '../components/SpeechToTextSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSummary } from '../hooks/useTransactions';
 import { useDate } from '../contexts/DateContext';
@@ -27,6 +28,7 @@ export default function HomeScreen() {
   const [addTransactionVisible, setAddTransactionVisible] = useState(false);
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithCategory | null>(null);
+  const [speechSheetVisible, setSpeechSheetVisible] = useState(false);
 
   const showAddTransaction = (type: 'expense' | 'income') => {
     setTransactionType(type);
@@ -134,6 +136,13 @@ export default function HomeScreen() {
         {/* FAB menu for adding transactions */}
         <View style={styles.fabContainer}>
           <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: '#FF9800' }]}
+            onPress={() => setSpeechSheetVisible(true)}
+          >
+            <MaterialCommunityIcons name="microphone" size={24} color="white" />
+            <Text style={styles.actionButtonText}>Speech</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.actionButton, styles.incomeButton]}
             onPress={() => showAddTransaction('income')}
           >
@@ -152,6 +161,10 @@ export default function HomeScreen() {
           isVisible={addTransactionVisible}
           transactionType={transactionType}
           onClose={() => setAddTransactionVisible(false)}
+        />
+        <SpeechToTextSheet
+          isVisible={speechSheetVisible}
+          onClose={() => setSpeechSheetVisible(false)}
         />
       </SafeAreaView>
     );
@@ -174,6 +187,13 @@ export default function HomeScreen() {
       {/* FAB menu for adding transactions */}
       <View style={styles.fabContainer}>
         <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: '#FF9800' }]}
+          onPress={() => setSpeechSheetVisible(true)}
+        >
+          <MaterialCommunityIcons name="microphone" size={24} color="white" />
+          <Text style={styles.actionButtonText}>Speech</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.actionButton, styles.incomeButton]}
           onPress={() => showAddTransaction('income')}
         >
@@ -195,6 +215,10 @@ export default function HomeScreen() {
         onClose={() => setAddTransactionVisible(false)}
         transaction={selectedTransaction}
       />
+      <SpeechToTextSheet
+        isVisible={speechSheetVisible}
+        onClose={() => setSpeechSheetVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -210,25 +234,30 @@ const styles = StyleSheet.create({
   },
   fabContainer: {
     position: 'absolute',
-    right: 20,
+    left: 0,
+    right: 0,
     bottom: 20,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'center', // Center all buttons as a group
     alignItems: 'center',
+    width: '100%', // Take full width for proper centering
+    paddingHorizontal: 0,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    marginLeft: 10,
+    paddingHorizontal: 10, // smaller padding
+    paddingVertical: 7,   // smaller padding
+    borderRadius: 20,     // smaller radius
+    marginLeft: 0,
+    marginRight: 8,         // smaller gap
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.18,
+    shadowRadius: 2.84,
+    elevation: 3,
+    minWidth: 80,           // ensure all buttons have a minimum width
   },
   incomeButton: {
     backgroundColor: '#4CAF50',
@@ -239,8 +268,8 @@ const styles = StyleSheet.create({
   actionButtonText: {
     color: 'white',
     fontWeight: '500',
-    fontSize: 14,
-    marginLeft: 6,
+    fontSize: 13,           // smaller font
+    marginLeft: 4,         // smaller gap
   },
   heading: {
     fontSize: 18,
