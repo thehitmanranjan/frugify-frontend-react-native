@@ -21,7 +21,7 @@ export default function InsightsSheet({ isVisible, onClose }: InsightsSheetProps
     setResponse('');
     insightsMutation.mutate(transcript, {
       onSuccess: (data: any) => {
-        setResponse(data.response || JSON.stringify(data));
+        setResponse(data.answer || data.response || JSON.stringify(data));
       },
       onError: (err: any) => {
         setError(err.message || 'Failed to fetch insights.');
