@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext'; // Import useAuth
 import { StackNavigationProp } from '@react-navigation/stack';
+import InsightsSheet from './InsightsSheet';
 
 type RootStackParamList = {
   Home: undefined;
@@ -17,6 +18,7 @@ export default function Header() {
   const navigation = useNavigation<NavigationProp>();
   const { logout } = useAuth(); // Get logout function
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [insightsVisible, setInsightsVisible] = useState(false);
 
   return (
     <>
@@ -36,13 +38,19 @@ export default function Header() {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.iconButton}
+            onPress={() => setInsightsVisible(true)}
+          >
+            <MaterialCommunityIcons name="information-outline" size={24} color="#333" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.iconButton}
             onPress={() => navigation.navigate('Settings')}
           >
             <MaterialCommunityIcons name="cog" size={24} color="#333" />
           </TouchableOpacity>
         </View>
       </View>
-      
+      <InsightsSheet isVisible={insightsVisible} onClose={() => setInsightsVisible(false)} />
       {/* Side Drawer */}
       {drawerVisible && (
         <View style={styles.drawerOverlay}>
