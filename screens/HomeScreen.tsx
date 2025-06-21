@@ -83,7 +83,7 @@ export default function HomeScreen() {
                 styles.amount,
                 // Theme-specific income/expense colors can be defined in ThemeContext if needed
                 item.category.type === 'income' ? styles.incomeText : styles.expenseText,
-                { color: item.category.type === 'income' ? (theme.isDarkMode ? '#4CAF50' : '#4CAF50') : (theme.isDarkMode ? '#F44336' : '#F44336')}
+                { color: item.category.type === 'income' ? '#4CAF50' : '#F44336'}
               ]}
             >
               {formatTransactionAmount(item.amount, item.category.type)}
@@ -117,8 +117,8 @@ export default function HomeScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Header />
         <View style={styles.errorContainer}>
-          <MaterialCommunityIcons name="alert-circle" size={40} color={theme.isDarkMode ? "#F44336" : "#D32F2F"} />
-          <Text style={[styles.errorText, { color: theme.isDarkMode ? "#F44336" : "#D32F2F" }]}>There was a problem loading your transactions.</Text>
+          <MaterialCommunityIcons name="alert-circle" size={40} color="#F44336" />
+          <Text style={[styles.errorText, { color: "#F44336" }]}>There was a problem loading your transactions.</Text>
           <Text style={[styles.errorSubText, { color: theme.colors.placeholder }]}>Please check your connection and try again.</Text>
         </View>
       </SafeAreaView>

@@ -144,7 +144,17 @@ const MainScreen = () => {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} theme={{colors: { background: theme.colors.background}}}>
+    <NavigationContainer ref={navigationRef} theme={{
+      dark: theme.dark,
+      colors: {
+        background: theme.colors.background,
+        primary: '',
+        card: '',
+        text: '',
+        border: '',
+        notification: ''
+      }
+    }}>
       {isAuthenticated ? (
         <AppNavigator />
       ) : showSignup ? (

@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { Calendar } from 'react-native-calendars';
 import CategoryIcon from './CategoryIcon';
 import { useDate } from '../contexts/DateContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 
 interface AddTransactionSheetProps {
@@ -29,6 +30,7 @@ export default function AddTransactionSheet({
   const updateTransaction = require('../hooks/useTransactions').useUpdateTransaction();
   const deleteTransaction = require('../hooks/useTransactions').useDeleteTransaction();
   const { currentDate } = useDate();
+  const { theme } = useTheme();
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -117,76 +119,74 @@ export default function AddTransactionSheet({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.modalContainer}
       >
-        <View style={styles.sheetContainer}>
+        <View style={[styles.sheetContainer, { backgroundColor: theme.colors.surface }]}> 
           <View style={styles.header}>
-            <Text style={styles.title}>
+            <Text style={[styles.title, { color: theme.colors.text }]}>
               {isEditMode
                 ? `Edit ${transactionType === 'income' ? 'Income' : 'Expense'}`
                 : `Add ${transactionType === 'income' ? 'Income' : 'Expense'}`}
             </Text>
             <TouchableOpacity onPress={onClose}>
-              <MaterialCommunityIcons name="close" size={24} color="#333" />
+              <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
             </TouchableOpacity>
           </View>
-          
           <ScrollView style={styles.formContainer}>
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Amount</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]} >Amount</Text>
               <View style={styles.inputContainer}>
-                <Text style={styles.inputPrefix}>₹</Text>
+                <Text style={[styles.inputPrefix, { color: theme.colors.placeholder, backgroundColor: theme.colors.background }]}>₹</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.colors.text }]}
                   placeholder="0.00"
+                  placeholderTextColor={theme.colors.placeholder}
                   value={amount}
                   onChangeText={setAmount}
                   keyboardType="decimal-pad"
                 />
               </View>
               {errors.amount ? (
-                <Text style={styles.errorText}>{errors.amount}</Text>
+                <Text style={[styles.errorText, { color: theme.colors.error || '#F44336' }]}>{errors.amount}</Text>
               ) : null}
             </View>
-            
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Category</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Category</Text>
               <TouchableOpacity
                 style={styles.selectButton}
                 onPress={() => setShowCategoryPicker(true)}
               >
-                <Text style={categoryId ? styles.selectValue : styles.selectPlaceholder}>
+                <Text style={categoryId ? [styles.selectValue, { color: theme.colors.text }] : [styles.selectPlaceholder, { color: theme.colors.placeholder }] }>
                   {categoryId && categories
                     ? categories.find(cat => cat.id.toString() === categoryId)?.name
                     : 'Select a category'}
                 </Text>
-                <MaterialCommunityIcons name="chevron-down" size={20} color="#666" />
+                <MaterialCommunityIcons name="chevron-down" size={20} color={theme.colors.placeholder} />
               </TouchableOpacity>
               {errors.categoryId ? (
-                <Text style={styles.errorText}>{errors.categoryId}</Text>
+                <Text style={[styles.errorText, { color: theme.colors.error || '#F44336' }]}>{errors.categoryId}</Text>
               ) : null}
             </View>
-            
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Note (optional)</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Note (optional)</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, { color: theme.colors.text }]}
                 placeholder="Add a note"
+                placeholderTextColor={theme.colors.placeholder}
                 value={description}
                 onChangeText={setDescription}
                 multiline
                 numberOfLines={3}
               />
             </View>
-            
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Date</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Date</Text>
               <TouchableOpacity
                 style={styles.selectButton}
                 onPress={() => setShowCalendar(true)}
               >
-                <Text style={styles.selectValue}>
+                <Text style={[styles.selectValue, { color: theme.colors.text }]}>
                   {format(new Date(date), 'MMMM d, yyyy')}
                 </Text>
-                <MaterialCommunityIcons name="calendar" size={20} color="#666" />
+                <MaterialCommunityIcons name="calendar" size={20} color={theme.colors.placeholder} />
               </TouchableOpacity>
             </View>
             
@@ -226,7 +226,6 @@ export default function AddTransactionSheet({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-      
       {/* Category Picker Modal */}
       <Modal
         visible={showCategoryPicker}
@@ -235,19 +234,21 @@ export default function AddTransactionSheet({
         onRequestClose={() => setShowCategoryPicker(false)}
       >
         <View style={styles.pickerModalOverlay}>
-          <View style={styles.pickerContainer}>
-            <Text style={styles.pickerTitle}>Select Category</Text>
-            
+          <View style={[styles.pickerContainer, { backgroundColor: theme.colors.surface }]}> 
+            <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>Select Category</Text>
             <ScrollView style={styles.pickerList}>
               {isCategoriesLoading ? (
-                <Text style={styles.pickerMessage}>Loading categories...</Text>
+                <Text style={[styles.pickerMessage, { color: theme.colors.placeholder }]}>Loading categories...</Text>
               ) : !categories || categories.length === 0 ? (
-                <Text style={styles.pickerMessage}>No categories available</Text>
+                <Text style={[styles.pickerMessage, { color: theme.colors.placeholder }]}>No categories available</Text>
               ) : (
                 categories.map((category) => (
                   <TouchableOpacity
                     key={category.id}
-                    style={styles.pickerItem}
+                    style={[
+                      styles.pickerItem,
+                      { borderBottomColor: theme.dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)' }
+                    ]}
                     onPress={() => {
                       setCategoryId(category.id.toString());
                       setShowCategoryPicker(false);
@@ -260,24 +261,23 @@ export default function AddTransactionSheet({
                         size={16}
                         style={styles.pickerIcon}
                       />
-                      <Text style={styles.pickerItemText}>{category.name}</Text>
+                      <Text style={[styles.pickerItemText, { color: theme.colors.text }]}>{category.name}</Text>
                     </View>
                   </TouchableOpacity>
                 ))
               )}
             </ScrollView>
-            
             <Button 
               mode="outlined"
               onPress={() => setShowCategoryPicker(false)}
               style={styles.pickerButton}
+              textColor={theme.colors.primary}
             >
               Cancel
             </Button>
           </View>
         </View>
       </Modal>
-      
       {/* Calendar Modal */}
       <Modal
         visible={showCalendar}
@@ -286,9 +286,8 @@ export default function AddTransactionSheet({
         onRequestClose={() => setShowCalendar(false)}
       >
         <View style={styles.pickerModalOverlay}>
-          <View style={styles.pickerContainer}>
-            <Text style={styles.pickerTitle}>Select Date</Text>
-            
+          <View style={[styles.pickerContainer, { backgroundColor: theme.colors.surface }]}> 
+            <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>Select Date</Text>
             <Calendar
               current={date}
               onDayPress={(day: { dateString: string }) => {
@@ -296,19 +295,35 @@ export default function AddTransactionSheet({
                 setShowCalendar(false);
               }}
               markedDates={{
-                [date]: { selected: true, selectedColor: '#2196F3' }
+                [date]: { selected: true, selectedColor: theme.colors.primary }
               }}
               theme={{
-                selectedDayBackgroundColor: '#2196F3',
-                todayTextColor: '#2196F3',
-                arrowColor: '#2196F3',
+                backgroundColor: theme.colors.surface,
+                calendarBackground: theme.colors.surface,
+                textSectionTitleColor: theme.colors.text,
+                selectedDayBackgroundColor: theme.colors.primary,
+                selectedDayTextColor: theme.colors.surface,
+                todayTextColor: theme.colors.primary,
+                dayTextColor: theme.colors.text,
+                textDisabledColor: theme.colors.placeholder,
+                dotColor: theme.colors.primary,
+                selectedDotColor: theme.colors.surface,
+                arrowColor: theme.colors.primary,
+                monthTextColor: theme.colors.text,
+                indicatorColor: theme.colors.primary,
+                textDayFontWeight: '500',
+                textMonthFontWeight: 'bold',
+                textDayHeaderFontWeight: '500',
+                textDayFontSize: 16,
+                textMonthFontSize: 18,
+                textDayHeaderFontSize: 14,
               }}
             />
-            
             <Button 
               mode="outlined"
               onPress={() => setShowCalendar(false)}
               style={styles.pickerButton}
+              textColor={theme.colors.primary}
             >
               Cancel
             </Button>
@@ -435,8 +450,6 @@ const styles = StyleSheet.create({
   },
   pickerItem: {
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   pickerItemContent: {
     flexDirection: 'row',

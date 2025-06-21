@@ -6,6 +6,7 @@ import { useSummary } from '../hooks/useTransactions';
 import { useDate } from '../contexts/DateContext';
 import { getQueryTimeFormat } from '../lib/date-utils';
 import { formatCurrency } from '../lib/formatters';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function BudgetSummary() {
   const { timeRange, startDate, endDate } = useDate();
@@ -22,6 +23,7 @@ export default function BudgetSummary() {
   console.log(`Fetching summary data for ${timeRange} from ${startDateStr} to ${endDateStr}`);
 
   const { width: screenWidth } = useWindowDimensions(); //This  concept is called property renaming during destructuring
+  const { theme } = useTheme();
 
   if (isLoading) {
     return (
@@ -87,56 +89,58 @@ export default function BudgetSummary() {
     name: category.name,
     amount: category.amount,
     color: category.color,
-    legendFontColor: '#7F7F7F',
+    legendFontColor: theme.colors.text, // Use theme color
     legendFontSize: 12
   }));
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
       {showChart ? (
         <View>
           <PieChart
             data={chartData}
             width={screenWidth}
-            height={330} // Increased height (220 * 1.5)
+            height={330}
             chartConfig={{
-              backgroundColor: '#ffffff',
-              backgroundGradientFrom: '#ffffff',
-              backgroundGradientTo: '#ffffff',
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              backgroundColor: theme.colors.surface,
+              backgroundGradientFrom: theme.colors.surface,
+              backgroundGradientTo: theme.colors.surface,
+              color: (opacity = 1) => theme.colors.text,
+              labelColor: (opacity = 1) => theme.colors.text,
             }}
             accessor="amount"
             backgroundColor="transparent"
             paddingLeft="0"
-            center={[screenWidth / 4, 0]} // Center the chart
+            center={[screenWidth / 4, 0]}
             absolute={false}
             hasLegend={false}
           />
           {/* Center hole for doughnut effect */}
           <View style={[styles.doughnutHole, {
-            top: 165 - 75, // Center vertically (chart height / 2 - radius)
-            left: screenWidth / 2 - 75 , // Center horizontally (screen width / 2 - radius)
+            top: 165 - 75,
+            left: screenWidth / 2 - 75,
+            backgroundColor: theme.colors.surface,
           }]} />
         </View>
       ) : (
         <View style={styles.noDataContainer}>
-          <Text style={styles.noDataText}>No expense data for this period</Text>
+          <Text style={[styles.noDataText, { color: theme.colors.text }]}>No expense data for this period</Text>
         </View>
       )}
 
       <View style={styles.centerContent}>
-        <Text style={styles.balanceLabel}>Balance</Text>
-        <Text style={styles.balanceValue}>{formatCurrency(summary.balance)}</Text>
+        <Text style={[styles.balanceLabel, { color: theme.colors.placeholder } ]}>Balance</Text>
+        <Text style={[styles.balanceValue, { color: theme.colors.text } ]}>{formatCurrency(summary.balance)}</Text>
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Income</Text>
-            <Text style={[styles.summaryValue, styles.incomeText]}>
+            <Text style={[styles.summaryLabel, { color: theme.colors.placeholder } ]}>Income</Text>
+            <Text style={[styles.summaryValue, styles.incomeText, { color: '#4CAF50' } ]}>
               {formatCurrency(summary.income)}
             </Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Expense</Text>
-            <Text style={[styles.summaryValue, styles.expenseText]}>
+            <Text style={[styles.summaryLabel, { color: theme.colors.placeholder } ]}>Expense</Text>
+            <Text style={[styles.summaryValue, styles.expenseText, { color: '#F44336' } ]}>
               {formatCurrency(summary.expense)}
             </Text>
           </View>
@@ -149,7 +153,6 @@ export default function BudgetSummary() {
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 16,
-    backgroundColor: 'white',
     position: 'relative',
     minHeight: 220,
   },
@@ -157,7 +160,6 @@ const styles = StyleSheet.create({
     padding: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
   },
   loadingText: {
     marginTop: 16,
@@ -168,7 +170,6 @@ const styles = StyleSheet.create({
     padding: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 8,
     marginHorizontal: 16,
     marginVertical: 24,
@@ -244,10 +245,9 @@ const styles = StyleSheet.create({
   },
   doughnutHole: {
     position: 'absolute',
-    width: 150, // Increased from 100 to 150 (1.5x)
-    height: 150, // Increased from 100 to 150 (1.5x)
-    borderRadius: 75, // Increased from 50 to 75 (1.5x)
-    backgroundColor: 'white',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     zIndex: 5,
   },
 });

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DefaultTheme, DarkTheme as PaperDarkTheme, Provider as PaperProvider } from 'react-native-paper';
+import { DefaultTheme, MD3DarkTheme as PaperDarkTheme, Provider as PaperProvider } from 'react-native-paper';
 
 // Define our custom themes
 export const lightTheme = {
