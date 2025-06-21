@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatTransactionDate } from '../lib/date-utils';
@@ -9,6 +9,7 @@ import { getQueryTimeFormat } from '../lib/date-utils';
 import CategoryIcon from './CategoryIcon';
 
 export default function TransactionsList() {
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const { timeRange, startDate, endDate } = useDate();
   const startDateStr = getQueryTimeFormat(startDate);
   const endDateStr = getQueryTimeFormat(endDate);
@@ -66,55 +67,104 @@ export default function TransactionsList() {
     categories: summary.categoryData?.length
   });
 
+  const renderCategoryItem = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={styles.categoryCard}
+      onPress={() => {
+        if (selectedCategory === item.id) {
+          setSelectedCategory(null); // Deselect if already selected
+        } else {
+          setSelectedCategory(item.id); // Select if not selected
+        }
+      }}
+    >
+      <CategoryIcon
+        name={item.icon}
+        color={item.color}
+        size={24}
+        style={styles.categoryIcon}
+      />
+      <View style={styles.categoryDetails}>
+        <Text style={styles.categoryName}>{item.name}</Text>
+        <Text style={[
+          styles.categoryAmount,
+          item.type === "income" ? styles.incomeText : styles.expenseText
+        ]}>
+          {formatTransactionAmount(item.amount, item.type)}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderTransactionItem = ({ item }: { item: any }) => {
+    if (!item.category) {
+      console.warn('Transaction without category:', item.id);
+      return null;
+    }
+
+    return (
+      <TouchableOpacity style={styles.transactionCard}>
+        <CategoryIcon
+          name={item.category.icon}
+          color={item.category.color}
+          size={18}
+          style={styles.categoryIcon}
+        />
+        <View style={styles.transactionDetails}>
+          <View style={styles.transactionHeader}>
+            <Text style={styles.categoryNameText}>{item.category.name}</Text>
+            <Text
+              style={[
+                styles.amount,
+                item.category.type === "income" ? styles.incomeText : styles.expenseText
+              ]}
+            >
+              {formatTransactionAmount(item.amount, item.category.type)}
+            </Text>
+          </View>
+          <View style={styles.transactionFooter}>
+            <Text style={styles.description}>
+              {item.description || item.category.name}
+            </Text>
+            <Text style={styles.date}>{formatTransactionDate(item.date)}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Transactions</Text>
+      {selectedCategory === null ? (
+        <Text style={styles.heading}>Transactions by Category</Text>
+      ) : (
+        <TouchableOpacity onPress={() => setSelectedCategory(null)} style={styles.headingContainer}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color="#2196F3" style={styles.backIcon} />
+          <Text style={styles.heading}>
+            {`Transactions for ${summary.categoryData?.find(cat => cat.id === selectedCategory)?.name}`}
+          </Text>
+        </TouchableOpacity>
+      )}
       
       {/* Use a wrapper to ensure proper scrolling on web */}
       <View style={styles.listWrapper}>
-        <FlatList  
-          data={summary.transactions}  
-          keyExtractor={(item) => item.id.toString()}  
-          renderItem={({ item }) => {  
-            // Ensure category exists  
-            if (!item.category) {  
-              console.warn('Transaction without category:', item.id);  
-              return null;  
-            }  
-              
-            return (  
-              <TouchableOpacity style={styles.transactionCard}>  
-                <CategoryIcon   
-                  name={item.category.icon}   
-                  color={item.category.color}   
-                  size={18}  
-                  style={styles.categoryIcon}  
-                />  
-                <View style={styles.transactionDetails}>  
-                  <View style={styles.transactionHeader}>  
-                    <Text style={styles.categoryName}>{item.category.name}</Text>  
-                    <Text   
-                      style={[  
-                        styles.amount,  
-                        item.category.type === "income" ? styles.incomeText : styles.expenseText  
-                      ]}  
-                    >  
-                      {formatTransactionAmount(item.amount, item.category.type)}  
-                    </Text>  
-                  </View>  
-                  <View style={styles.transactionFooter}>  
-                    <Text style={styles.description}>  
-                      {item.description || item.category.name}  
-                    </Text>  
-                    <Text style={styles.date}>{formatTransactionDate(item.date)}</Text>  
-                  </View>  
-                </View>  
-              </TouchableOpacity>  
-            );  
-          }}  
-          showsVerticalScrollIndicator={true}  
-          contentContainerStyle={styles.listContent}  
-        />  
+        {selectedCategory === null ? (
+          <FlatList
+            data={summary.categoryData}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderCategoryItem}
+            showsVerticalScrollIndicator={true}
+            contentContainerStyle={styles.listContent}
+          />
+        ) : (
+          <FlatList
+            data={summary.transactions.filter(t => t.categoryId === selectedCategory)}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderTransactionItem}
+            showsVerticalScrollIndicator={true}
+            contentContainerStyle={styles.listContent}
+          />
+        )}
       </View>
     </View>
   );
@@ -168,6 +218,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
   },
+  headingContainer: { // For clickable header with back arrow
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  backIcon: {
+    marginRight: 8,
+  },
   emptyContainer: {
     backgroundColor: 'white',
     borderRadius: 8,
@@ -194,6 +252,29 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Extra space at the bottom for the FAB
     ...(Platform.OS === 'web' ? { minHeight: '100%' } : {}),
   },
+  categoryCard: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16, // Increased padding for category cards
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    alignItems: 'center', // Align items vertically
+  },
+  categoryDetails: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  categoryAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   transactionCard: {
     flexDirection: 'row',
     backgroundColor: 'white',
@@ -217,7 +298,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 4,
   },
-  categoryName: {
+  categoryName: { // Style for category name in category list
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  categoryNameText: { // Style for category name in transaction list
     fontSize: 16,
     fontWeight: '500',
   },
