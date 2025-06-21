@@ -1,7 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Provider as PaperProvider } from 'react-native-paper';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Touchable, TouchableWithoutFeedback, Keyboard } from 'react-native';
@@ -16,6 +15,7 @@ import SignupScreen from './screens/SignupScreen';
 // Context
 import { DateProvider } from './contexts/DateContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'; // Import ThemeProvider and useTheme
 
 // API Client
 import { queryClient } from './lib/apiClient';
@@ -48,12 +48,14 @@ const AppNavigator = () => (
 // Component to handle conditional rendering based on auth state
 const MainScreen = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const { theme } = useTheme(); // Use theme from context
   const [showSignup, setShowSignup] = React.useState(false);
   const [signupPrompt, setSignupPrompt] = React.useState(false);
 
   // Custom login handler to show signup prompt if user not found
   const LoginWithSignupPrompt = () => {
     const { login } = useAuth();
+    const { theme } = useTheme(); // Use theme from context
     const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [loading, setLoading] = React.useState(false);
@@ -84,10 +86,10 @@ const MainScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined} // Adjust for iOS keyboard handling
       >
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-          <View style={styles.container}>
-            <Text style={styles.title}>Login</Text>
+          <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+            <Text style={[styles.title, { color: theme.colors.text }]}>Login</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.colors.surface, color: theme.colors.text, borderColor: theme.colors.placeholder }]}
               placeholder="Username"
               value={username}
               onChangeText={setUsername}
@@ -95,7 +97,7 @@ const MainScreen = () => {
             />
             <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
               <TextInput
-                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                style={[styles.input, { flex: 1, marginBottom: 0, backgroundColor: theme.colors.surface, color: theme.colors.text, borderColor: theme.colors.placeholder }]}
                 placeholder="Password"
                 value={password}
                 onChangeText={setPassword}
@@ -109,21 +111,21 @@ const MainScreen = () => {
                 <MaterialCommunityIcons
                   name={showPassword ? 'eye-off' : 'eye'}
                   size={24}
-                  color="#888"
+                  color={theme.colors.placeholder}
                 />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-              <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Submit'}</Text>
+            <TouchableOpacity style={[styles.button, { backgroundColor: theme.colors.primary }]} onPress={handleLogin} disabled={loading}>
+              <Text style={[styles.buttonText, { color: theme.colors.surface }]}>{loading ? 'Logging in...' : 'Submit'}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowSignup(true)} style={{ marginTop: 16 }}>
-              <Text style={{ color: '#007bff' }}>Don't have an account? Sign up</Text>
+              <Text style={{ color: theme.colors.primary }}>Don't have an account? Sign up</Text>
             </TouchableOpacity>
             {signupPrompt && (
               <View style={{ marginTop: 20 }}>
                 <Text style={{ color: 'red', marginBottom: 8 }}>User does not exist. Would you like to sign up?</Text>
-                <TouchableOpacity style={styles.button} onPress={() => { setShowSignup(true); setSignupPrompt(false); }}>
-                  <Text style={styles.buttonText}>Sign Up</Text>
+                <TouchableOpacity style={[styles.button, { backgroundColor: theme.colors.primary }]} onPress={() => { setShowSignup(true); setSignupPrompt(false); }}>
+                  <Text style={[styles.buttonText, { color: theme.colors.surface }]}>Sign Up</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -135,14 +137,24 @@ const MainScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+      <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} theme={{
+      dark: theme.dark,
+      colors: {
+        background: theme.colors.background,
+        primary: '',
+        card: '',
+        text: '',
+        border: '',
+        notification: ''
+      }
+    }}>
       {isAuthenticated ? (
         <AppNavigator />
       ) : showSignup ? (
@@ -150,7 +162,7 @@ const MainScreen = () => {
       ) : (
         <LoginWithSignupPrompt />
       )}
-      <StatusBar style="auto" />
+      <StatusBar style={theme.dark ? "light" : "dark"} />
     </NavigationContainer>
   );
 };
@@ -158,13 +170,13 @@ const MainScreen = () => {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <PaperProvider>
-        <DateProvider>
-          <AuthProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <DateProvider>
             <MainScreen />
-          </AuthProvider>
-        </DateProvider>
-      </PaperProvider>
+          </DateProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

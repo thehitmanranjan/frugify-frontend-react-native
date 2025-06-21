@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Button, Card, Divider, Switch, Dialog, Portal, TextInput as PaperTextInput } from 'react-native-paper';
+import { Button, Card, Divider, Switch, Dialog, Portal, TextInput as PaperTextInput, useTheme as usePaperTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
 
 import Header from '../components/Header';
 import CategoryIcon from '../components/CategoryIcon';
@@ -111,6 +112,8 @@ function CategoryItem({ category, onEdit, onDelete }: CategoryItemProps) {
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { isDarkMode, toggleTheme, theme } = useTheme(); // Use theme from context
+  const paperTheme = usePaperTheme(); // Use paper theme for component styling
   
   // Category data and mutations
   const { data: categories, isLoading } = useCategories();
@@ -201,36 +204,43 @@ export default function SettingsScreen() {
   };
   
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Header />
       
       <View style={styles.content}>
+        {/* Dark Mode Toggle */}
+        <View style={styles.settingItem}>
+          <Text style={[styles.settingText, { color: theme.colors.text }]}>Dark Mode</Text>
+          <Switch value={isDarkMode} onValueChange={toggleTheme} color={theme.colors.primary} />
+        </View>
+        <Divider style={{ backgroundColor: theme.colors.placeholder, marginVertical: 16 }} />
+
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Categories</Text>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Categories</Text>
           <TouchableOpacity 
-            style={styles.addButton}
+            style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
             onPress={handleAddCategory}
           >
-            <MaterialCommunityIcons name="plus" size={20} color="white" />
-            <Text style={styles.addButtonText}>Add Category</Text>
+            <MaterialCommunityIcons name="plus" size={20} color={theme.colors.surface} />
+            <Text style={[styles.addButtonText, { color: theme.colors.surface }]}>Add Category</Text>
           </TouchableOpacity>
         </View>
         
-        <View style={styles.tabContainer}>
+        <View style={[styles.tabContainer, { borderBottomColor: theme.colors.placeholder }]}>
           <TouchableOpacity
-            style={[styles.tab, currentTab === 'expense' && styles.activeTab]}
+            style={[styles.tab, currentTab === 'expense' && styles.activeTab, currentTab === 'expense' && { borderBottomColor: theme.colors.primary }]}
             onPress={() => setCurrentTab('expense')}
           >
-            <Text style={[styles.tabText, currentTab === 'expense' && styles.activeTabText]}>
+            <Text style={[styles.tabText, {color: theme.colors.text }, currentTab === 'expense' && styles.activeTabText, currentTab === 'expense' && { color: theme.colors.primary }]}>
               Expense
             </Text>
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.tab, currentTab === 'income' && styles.activeTab]}
+            style={[styles.tab, currentTab === 'income' && styles.activeTab, currentTab === 'income' && { borderBottomColor: theme.colors.primary}]}
             onPress={() => setCurrentTab('income')}
           >
-            <Text style={[styles.tabText, currentTab === 'income' && styles.activeTabText]}>
+            <Text style={[styles.tabText, {color: theme.colors.text }, currentTab === 'income' && styles.activeTabText, currentTab === 'income' && { color: theme.colors.primary }]}>
               Income
             </Text>
           </TouchableOpacity>
@@ -248,7 +258,7 @@ export default function SettingsScreen() {
           )}
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: theme.colors.placeholder }]}>
                 No {currentTab} categories found. Add one to get started!
               </Text>
             </View>
@@ -259,8 +269,12 @@ export default function SettingsScreen() {
       
       {/* Add/Edit Category Dialog */}
       <Portal>
-        <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)} style={{ maxHeight: '90%' }}>
-          <Dialog.Title>
+        <Dialog
+            visible={dialogVisible}
+            onDismiss={() => setDialogVisible(false)}
+            style={{ maxHeight: '90%', backgroundColor: theme.colors.surface }}
+        >
+          <Dialog.Title style={{ color: theme.colors.text }}>
             {editingCategory ? 'Edit Category' : 'Add Category'}
           </Dialog.Title>
           <View style={{ maxHeight: 400 }}>
@@ -272,9 +286,10 @@ export default function SettingsScreen() {
                     label="Category Name"
                     value={categoryName}
                     onChangeText={setCategoryName}
-                    style={styles.input}
+                    style={[styles.input, { backgroundColor: theme.colors.background }]}
+                    theme={{ colors: { primary: theme.colors.primary, text: theme.colors.text, placeholder: theme.colors.placeholder, background: theme.colors.background } }}
                   />
-                  <Text style={styles.sectionTitle}>Color</Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Color</Text>
                   <View style={styles.colorGrid}>
                     {colorOptions.map((color) => (
                       <TouchableOpacity
@@ -283,12 +298,13 @@ export default function SettingsScreen() {
                           styles.colorOption,
                           { backgroundColor: color },
                           selectedColor === color && styles.selectedColorOption,
+                          selectedColor === color && { borderColor: theme.colors.primary },
                         ]}
                         onPress={() => setSelectedColor(color)}
                       />
                     ))}
                   </View>
-                  <Text style={styles.sectionTitle}>Icon</Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Icon</Text>
                   <View style={styles.iconGrid}>
                     {iconOptions.map((icon) => (
                       <TouchableOpacity
@@ -296,12 +312,13 @@ export default function SettingsScreen() {
                         style={[
                           styles.iconOption,
                           selectedIcon === icon.name && styles.selectedIconOption,
+                          selectedIcon === icon.name && { borderColor: theme.colors.primary },
                         ]}
                         onPress={() => setSelectedIcon(icon.name)}
                       >
                         <CategoryIcon 
                           name={icon.name} 
-                          color={selectedIcon === icon.name ? selectedColor : '#ccc'} 
+                          color={selectedIcon === icon.name ? selectedColor : theme.colors.placeholder}
                           size={16}
                         />
                       </TouchableOpacity>
@@ -314,8 +331,8 @@ export default function SettingsScreen() {
             />
           </View>
           <Dialog.Actions>
-            <Button onPress={() => setDialogVisible(false)}>Cancel</Button>
-            <Button onPress={handleSaveCategory}>Save</Button>
+            <Button onPress={() => setDialogVisible(false)} color={theme.colors.primary}>Cancel</Button>
+            <Button onPress={handleSaveCategory} color={theme.colors.primary}>Save</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -324,9 +341,8 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { // Base container style, background color will be overridden by theme
     flex: 1,
-    backgroundColor: '#f9f9f9',
   },
   content: {
     flex: 1,
@@ -338,28 +354,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  title: {
+  title: { // Text color will be overridden by theme
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
   },
-  addButton: {
+  addButton: { // Background and text color will be overridden by theme
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007bff',
     borderRadius: 4,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
-  addButtonText: {
-    color: 'white',
+  addButtonText: { // Text color will be overridden by theme
     fontWeight: 'bold',
     marginLeft: 8,
   },
-  tabContainer: {
+  tabContainer: { // Border color will be overridden by theme
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
     marginBottom: 16,
   },
   tab: {
@@ -367,20 +379,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
-  activeTab: {
+  activeTab: { // Border color will be overridden by theme
     borderBottomWidth: 2,
-    borderBottomColor: '#007bff',
   },
-  tabText: {
-    color: '#333',
+  tabText: { // Text color will be overridden by theme
     fontWeight: '500',
   },
-  activeTabText: {
-    color: '#007bff',
+  activeTabText: { // Text color will be overridden by theme
     fontWeight: 'bold',
   },
-  categoryCard: {
-    backgroundColor: 'white',
+  categoryCard: { // Background color will be overridden by theme
     borderRadius: 8,
     elevation: 1,
     marginBottom: 12,
@@ -395,11 +403,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  categoryName: {
+  categoryName: { // Text color will be overridden by theme
     marginLeft: 8,
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
   },
   categoryActions: {
     flexDirection: 'row',
@@ -413,20 +420,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyText: {
-    color: '#666',
+  emptyText: { // Text color will be overridden by theme
     fontSize: 16,
   },
   listContent: {
     paddingBottom: 16,
   },
-  input: {
+  input: { // Background color will be overridden by theme in PaperTextInput
     marginBottom: 16,
   },
-  sectionTitle: {
+  sectionTitle: { // Text color will be overridden by theme
     fontSize: 14,
     fontWeight: 'bold',
-    color: 'white',
     marginBottom: 8,
   },
   colorGrid: {
@@ -435,22 +440,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  colorOption: {
+  colorOption: { // Border color will be overridden by theme
     width: 40,
     height: 40,
     borderRadius: 20,
     marginBottom: 10,
     borderWidth: 2,
-    borderColor: '#fff',
-    backgroundColor: '#eee',
+    // borderColor: '#fff', // Keep or remove based on theme design for unselected
+    // backgroundColor: '#eee', // Keep or remove based on theme design for unselected
     justifyContent: 'center',
     alignItems: 'center',
   },
-  selectedColorOption: {
+  selectedColorOption: { // Border and shadow color will be overridden by theme
     borderWidth: 3,
-    borderColor: '#007bff',
-    backgroundColor: '#fff',
-    shadowColor: '#007bff',
+    // backgroundColor: '#fff', // Keep or remove based on theme design for selected
+    // shadowColor: '#007bff', // Keep or remove based on theme design for selected
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -468,8 +472,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  selectedIconOption: {
+  selectedIconOption: { // Border color will be overridden by theme
     borderWidth: 2,
-    borderColor: '#007bff',
   },
+  settingItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  settingText: { // Text color will be overridden by theme
+    fontSize: 16,
+  }
 });

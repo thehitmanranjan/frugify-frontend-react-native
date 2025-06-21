@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'; // Added ScrollView
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth
+import { useAuth } from '../contexts/AuthContext';
 import { StackNavigationProp } from '@react-navigation/stack';
 import InsightsSheet from './InsightsSheet';
+import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
 
 type RootStackParamList = {
   Home: undefined;
@@ -16,37 +17,38 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function Header() {
   const navigation = useNavigation<NavigationProp>();
-  const { logout } = useAuth(); // Get logout function
+  const { logout } = useAuth();
+  const { theme } = useTheme(); // Use theme from context
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [insightsVisible, setInsightsVisible] = useState(false);
 
   return (
     <>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.leftContainer}>
           <TouchableOpacity 
             style={styles.iconButton}
             onPress={() => setDrawerVisible(true)}
           >
-            <MaterialCommunityIcons name="menu" size={24} color="#333" />
+            <MaterialCommunityIcons name="menu" size={24} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Frugify</Text>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Frugify</Text>
         </View>
         <View style={styles.rightContainer}>
           <TouchableOpacity style={styles.iconButton}>
-            <MaterialCommunityIcons name="magnify" size={24} color="#333" />
+            <MaterialCommunityIcons name="magnify" size={24} color={theme.colors.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.iconButton}
             onPress={() => setInsightsVisible(true)}
           >
-            <MaterialCommunityIcons name="information-outline" size={24} color="#333" />
+            <MaterialCommunityIcons name="information-outline" size={24} color={theme.colors.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.iconButton}
             onPress={() => navigation.navigate('Settings')}
           >
-            <MaterialCommunityIcons name="cog" size={24} color="#333" />
+            <MaterialCommunityIcons name="cog" size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -54,14 +56,14 @@ export default function Header() {
       {/* Side Drawer */}
       {drawerVisible && (
         <View style={styles.drawerOverlay}>
-          <View style={styles.drawer}>
+          <View style={[styles.drawer, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.drawerHeader}>
-              <Text style={styles.drawerTitle}>Frugify</Text>
+              <Text style={[styles.drawerTitle, { color: theme.colors.text }]}>Frugify</Text>
               <TouchableOpacity 
                 onPress={() => setDrawerVisible(false)}
                 style={styles.closeButton}
               >
-                <MaterialCommunityIcons name="close" size={24} color="#333" />
+                <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
             
@@ -73,8 +75,8 @@ export default function Header() {
                   setDrawerVisible(false);
                 }}
               >
-                <MaterialCommunityIcons name="view-dashboard" size={22} color="#555" style={styles.drawerIcon} />
-                <Text style={styles.drawerItemText}>Dashboard</Text>
+                <MaterialCommunityIcons name="view-dashboard" size={22} color={theme.colors.text} style={styles.drawerIcon} />
+                <Text style={[styles.drawerItemText, { color: theme.colors.text }]}>Dashboard</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -84,8 +86,8 @@ export default function Header() {
                   setDrawerVisible(false);
                 }}
               >
-                <MaterialCommunityIcons name="wallet" size={22} color="#555" style={styles.drawerIcon} />
-                <Text style={styles.drawerItemText}>Budget</Text>
+                <MaterialCommunityIcons name="wallet" size={22} color={theme.colors.text} style={styles.drawerIcon} />
+                <Text style={[styles.drawerItemText, { color: theme.colors.text }]}>Budget</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -95,8 +97,8 @@ export default function Header() {
                   setDrawerVisible(false);
                 }}
               >
-                <MaterialCommunityIcons name="cog" size={22} color="#555" style={styles.drawerIcon} />
-                <Text style={styles.drawerItemText}>Settings</Text>
+                <MaterialCommunityIcons name="cog" size={22} color={theme.colors.text} style={styles.drawerIcon} />
+                <Text style={[styles.drawerItemText, { color: theme.colors.text }]}>Settings</Text>
               </TouchableOpacity>
 
               {/* Logout Button */}
@@ -107,8 +109,8 @@ export default function Header() {
                   setDrawerVisible(false);
                 }}
               >
-                <MaterialCommunityIcons name="logout" size={22} color="#555" style={styles.drawerIcon} />
-                <Text style={styles.drawerItemText}>Logout</Text>
+                <MaterialCommunityIcons name="logout" size={22} color={theme.colors.text} style={styles.drawerIcon} />
+                <Text style={[styles.drawerItemText, { color: theme.colors.text }]}>Logout</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -129,10 +131,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'white',
-    shadowColor: '#000',
+    // backgroundColor: 'white', // Theme controlled
+    shadowColor: '#000', // Keep or make theme-dependent
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.1, // Keep or make theme-dependent
     shadowRadius: 1,
     elevation: 2,
     zIndex: 10,
@@ -145,12 +147,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  title: {
+  title: { // Text color is theme controlled
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 10,
   },
-  iconButton: {
+  iconButton: { // Icon color is theme controlled
     padding: 8,
   },
   drawerOverlay: {
@@ -162,13 +164,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     zIndex: 1000,
   },
-  drawer: {
+  drawer: { // Background color is theme controlled
     width: 250,
-    backgroundColor: 'white',
+    // backgroundColor: 'white', // Theme controlled
     height: '100%',
-    shadowColor: '#000',
+    shadowColor: '#000', // Keep or make theme-dependent
     shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.2, // Keep or make theme-dependent
     shadowRadius: 5,
     elevation: 5,
     padding: 16,
@@ -176,36 +178,35 @@ const styles = StyleSheet.create({
   },
   drawerOutside: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.4)', // Consider making this theme-dependent if needed
   },
-  drawerHeader: {
+  drawerHeader: { // Text color is theme controlled
     marginTop: 30,
     marginBottom: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  drawerTitle: {
+  drawerTitle: { // Text color is theme controlled
     fontSize: 20,
     fontWeight: '600',
   },
-  closeButton: {
+  closeButton: { // Icon color is theme controlled
     padding: 8,
   },
-  drawerItem: {
-    flexDirection: 'row', // Align icon and text
-    alignItems: 'center', // Center items vertically
+  drawerItem: { // Icon and text color are theme controlled
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 15, 
     paddingHorizontal: 12,
     borderRadius: 6,
     marginBottom: 8, 
   },
-  drawerIcon: {
-    marginRight: 15, // Space between icon and text
+  drawerIcon: { // Icon color is theme controlled
+    marginRight: 15,
   },
-  drawerItemText: {
+  drawerItemText: { // Text color is theme controlled
     fontSize: 16,
     fontWeight: '500',
-    color: '#333', 
   },
 });
