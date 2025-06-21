@@ -14,6 +14,7 @@ import SpeechToTextSheet from '../components/SpeechToTextSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSummary } from '../hooks/useTransactions';
 import { useDate } from '../contexts/DateContext';
+import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
 import { getQueryTimeFormat } from '../lib/date-utils';
 import { formatTransactionDate } from '../lib/date-utils';
 import { formatTransactionAmount } from '../lib/formatters';
@@ -24,6 +25,7 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { theme } = useTheme(); // Use theme from context
 
   const [addTransactionVisible, setAddTransactionVisible] = useState(false);
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
@@ -58,7 +60,7 @@ export default function HomeScreen() {
       <DateSelector />
       <TimeRangeSelector />
       <BudgetSummary />
-      <Text style={styles.heading}>Transactions</Text>
+      <Text style={[styles.heading, { color: theme.colors.text }]}>Transactions</Text>
     </>
   );
 
@@ -66,28 +68,30 @@ export default function HomeScreen() {
   const renderTransaction = ({ item }: { item: TransactionWithCategory }) => {
     if (!item.category) return null;
     return (
-      <TouchableOpacity style={styles.transactionCard} onPress={() => showEditTransaction(item)}>
+      <TouchableOpacity style={[styles.transactionCard, { backgroundColor: theme.colors.surface }]} onPress={() => showEditTransaction(item)}>
         <CategoryIcon
           name={item.category.icon}
-          color={item.category.color}
+          color={item.category.color} // Category color should contrast with surface
           size={18}
           style={styles.categoryIcon}
         />
         <View style={styles.transactionDetails}>
           <View style={styles.transactionHeader}>
-            <Text style={styles.categoryName}>{item.category.name}</Text>
+            <Text style={[styles.categoryName, { color: theme.colors.text }]}>{item.category.name}</Text>
             <Text
               style={[
                 styles.amount,
+                // Theme-specific income/expense colors can be defined in ThemeContext if needed
                 item.category.type === 'income' ? styles.incomeText : styles.expenseText,
+                { color: item.category.type === 'income' ? (theme.isDarkMode ? '#4CAF50' : '#4CAF50') : (theme.isDarkMode ? '#F44336' : '#F44336')}
               ]}
             >
               {formatTransactionAmount(item.amount, item.category.type)}
             </Text>
           </View>
           <View style={styles.transactionFooter}>
-            <Text style={styles.description}>{item.description || item.category.name}</Text>
-            <Text style={styles.date}>{formatTransactionDate(item.date)}</Text>
+            <Text style={[styles.description, { color: theme.colors.placeholder }]}>{item.description || item.category.name}</Text>
+            <Text style={[styles.date, { color: theme.colors.placeholder }]}>{formatTransactionDate(item.date)}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -97,11 +101,11 @@ export default function HomeScreen() {
   // Loading state
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Header />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2196F3" />
-          <Text style={styles.loadingText}>Loading transactions...</Text>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading transactions...</Text>
         </View>
       </SafeAreaView>
     );
@@ -110,12 +114,12 @@ export default function HomeScreen() {
   // Error state
   if (isError) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Header />
         <View style={styles.errorContainer}>
-          <MaterialCommunityIcons name="alert-circle" size={40} color="#F44336" />
-          <Text style={styles.errorText}>There was a problem loading your transactions.</Text>
-          <Text style={styles.errorSubText}>Please check your connection and try again.</Text>
+          <MaterialCommunityIcons name="alert-circle" size={40} color={theme.isDarkMode ? "#F44336" : "#D32F2F"} />
+          <Text style={[styles.errorText, { color: theme.isDarkMode ? "#F44336" : "#D32F2F" }]}>There was a problem loading your transactions.</Text>
+          <Text style={[styles.errorSubText, { color: theme.colors.placeholder }]}>Please check your connection and try again.</Text>
         </View>
       </SafeAreaView>
     );
@@ -124,16 +128,16 @@ export default function HomeScreen() {
   // Empty state
   if (!summary || !summary.transactions || summary.transactions.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Header />
-        <View style={styles.content}>
+        <View style={[styles.content, { backgroundColor: theme.colors.background}]}>
           {renderListHeader()}
           <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons name="cash-remove" size={40} color="#9E9E9E" />
-            <Text style={styles.emptyText}>No transactions found for this period.</Text>
+            <MaterialCommunityIcons name="cash-remove" size={40} color={theme.colors.placeholder} />
+            <Text style={[styles.emptyText, { color: theme.colors.placeholder }]}>No transactions found for this period.</Text>
           </View>
         </View>
-        {/* FAB menu for adding transactions */}
+        {/* FAB menu for adding transactions - Assuming these buttons are themed correctly or don't need theming */}
         <View style={styles.fabContainer}>
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: '#FF9800' }]}
@@ -172,9 +176,9 @@ export default function HomeScreen() {
 
   // Main list
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Header />
-      <View style={styles.content}>
+      <View style={[styles.content, { backgroundColor: theme.colors.background }]}>
         <FlatList
           data={summary.transactions}
           keyExtractor={(item) => item.id.toString()}
@@ -224,15 +228,14 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { // Base container style, background color will be overridden by theme
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
-  content: {
+  content: { // Base content style, background color will be overridden by theme
     flex: 1,
     ...(Platform.OS === 'web' ? { height: '100%', overflow: 'hidden' } : {}),
   },
-  fabContainer: {
+  fabContainer: { // FAB buttons might need specific theme adjustments if their current colors clash
     position: 'absolute',
     left: 0,
     right: 0,
@@ -277,10 +280,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
     marginLeft: 16,
-    color: '#333',
+    // color: '#333', // Theme controlled
   },
-  transactionCard: {
-    backgroundColor: 'white',
+  transactionCard: { // Background color will be overridden by theme
+    // backgroundColor: 'white', // Theme controlled
     borderRadius: 8,
     padding: 16,
     marginHorizontal: 16,
@@ -305,19 +308,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  categoryName: {
+  categoryName: { // Text color will be overridden by theme
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
+    // color: '#333', // Theme controlled
   },
-  amount: {
+  amount: { // Text color will be overridden by theme for income/expense
     fontSize: 16,
     fontWeight: '700',
   },
-  incomeText: {
+  incomeText: { // Specific color, might need theme adjustment if it clashes
     color: '#4CAF50',
   },
-  expenseText: {
+  expenseText: { // Specific color, might need theme adjustment if it clashes
     color: '#F44336',
   },
   transactionFooter: {
@@ -325,50 +328,50 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  description: {
+  description: { // Text color will be overridden by theme
     fontSize: 14,
-    color: '#666',
+    // color: '#666', // Theme controlled
   },
-  date: {
+  date: { // Text color will be overridden by theme
     fontSize: 14,
-    color: '#999',
+    // color: '#999', // Theme controlled
   },
-  loadingContainer: {
+  loadingContainer: { // Background color will be overridden by theme
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingText: {
+  loadingText: { // Text color will be overridden by theme
     marginTop: 8,
     fontSize: 16,
-    color: '#666',
+    // color: '#666', // Theme controlled
   },
-  errorContainer: {
+  errorContainer: { // Background color will be overridden by theme
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
   },
-  errorText: {
+  errorText: { // Text color will be overridden by theme
     fontSize: 18,
     fontWeight: '500',
-    color: '#F44336',
+    // color: '#F44336', // Theme controlled
   },
-  errorSubText: {
+  errorSubText: { // Text color will be overridden by theme
     fontSize: 14,
-    color: '#666',
+    // color: '#666', // Theme controlled
     textAlign: 'center',
     marginTop: 4,
   },
-  emptyContainer: {
+  emptyContainer: { // Background color will be overridden by theme
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
   },
-  emptyText: {
+  emptyText: { // Text color will be overridden by theme
     fontSize: 16,
-    color: '#9E9E9E',
+    // color: '#9E9E9E', // Theme controlled
     textAlign: 'center',
     marginTop: 8,
   },
