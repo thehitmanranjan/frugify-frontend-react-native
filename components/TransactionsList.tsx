@@ -47,13 +47,15 @@ export default function TransactionsList() {
     );
   }
 
-  if (!summary || !summary.transactions || summary.transactions.length === 0) {
+  // This top-level check should only be for when summary itself is missing.
+  // Specific empty states (no categories, no transactions in selected category) will be handled inside the main render.
+  if (!summary) {
     return (
       <View style={styles.container}>
         <Text style={styles.heading}>Transactions</Text>
         <View style={styles.emptyContainer}>
-          <MaterialCommunityIcons name="cash-remove" size={40} color="#9E9E9E" />
-          <Text style={styles.emptyText}>No transactions found for this period.</Text>
+          <MaterialCommunityIcons name="information-outline" size={40} color="#9E9E9E" />
+          <Text style={styles.emptyText}>Could not load summary data.</Text>
         </View>
       </View>
     );
@@ -149,21 +151,43 @@ export default function TransactionsList() {
       {/* Use a wrapper to ensure proper scrolling on web */}
       <View style={styles.listWrapper}>
         {selectedCategory === null ? (
-          <FlatList
-            data={summary.categoryData}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderCategoryItem}
-            showsVerticalScrollIndicator={true}
-            contentContainerStyle={styles.listContent}
-          />
+          // Category List View
+          (!summary.categoryData || summary.categoryData.length === 0) ? (
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons name="format-list-bulleted-type" size={40} color="#9E9E9E" />
+              <Text style={styles.emptyText}>No categories to display for this period.</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={summary.categoryData}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderCategoryItem}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.listContent}
+            />
+          )
         ) : (
-          <FlatList
-            data={summary.transactions.filter(t => t.categoryId === selectedCategory)}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderTransactionItem}
-            showsVerticalScrollIndicator={true}
-            contentContainerStyle={styles.listContent}
-          />
+          // Transactions for Selected Category View
+          (() => {
+            const filteredTransactions = summary.transactions.filter(t => t.categoryId === selectedCategory);
+            if (filteredTransactions.length === 0) {
+              return (
+                <View style={styles.emptyContainer}>
+                  <MaterialCommunityIcons name="cash-remove" size={40} color="#9E9E9E" />
+                  <Text style={styles.emptyText}>No transactions found for this category.</Text>
+                </View>
+              );
+            }
+            return (
+              <FlatList
+                data={filteredTransactions}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderTransactionItem}
+                showsVerticalScrollIndicator={true}
+                contentContainerStyle={styles.listContent}
+              />
+            );
+          })()
         )}
       </View>
     </View>
