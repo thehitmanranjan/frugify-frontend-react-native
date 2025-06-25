@@ -323,29 +323,31 @@ export default function AddTransactionSheet({
               ) : !categories || categories.length === 0 ? (
                 <Text style={[styles.pickerMessage, { color: theme.colors.placeholder }]}>No categories available</Text>
               ) : (
-                categories.map((category) => (
-                  <TouchableOpacity
-                    key={category.id}
-                    style={[
-                      styles.pickerItem,
-                      { borderBottomColor: theme.dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)' }
-                    ]}
-                    onPress={() => {
-                      setCategoryId(category.id.toString());
-                      setShowCategoryPicker(false);
-                    }}
-                  >
-                    <View style={styles.pickerItemContent}>
-                      <CategoryIcon
-                        name={category.icon}
-                        color={category.color}
-                        size={16}
-                        style={styles.pickerIcon}
-                      />
-                      <Text style={[styles.pickerItemText, { color: theme.colors.text }]}>{category.name}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))
+                categories
+                  .filter(category => category.type === transactionType)
+                  .map((category) => (
+                    <TouchableOpacity
+                      key={category.id}
+                      style={[
+                        styles.pickerItem,
+                        { borderBottomColor: theme.dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)' }
+                      ]}
+                      onPress={() => {
+                        setCategoryId(category.id.toString());
+                        setShowCategoryPicker(false);
+                      }}
+                    >
+                      <View style={styles.pickerItemContent}>
+                        <CategoryIcon
+                          name={category.icon}
+                          color={category.color}
+                          size={16}
+                          style={styles.pickerIcon}
+                        />
+                        <Text style={[styles.pickerItemText, { color: theme.colors.text }]}>{category.name}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))
               )}
             </ScrollView>
             <Button 
