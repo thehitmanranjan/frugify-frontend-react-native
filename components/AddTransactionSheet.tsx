@@ -31,6 +31,7 @@ export default function AddTransactionSheet({
   const deleteTransaction = require('../hooks/useTransactions').useDeleteTransaction();
   const { currentDate } = useDate();
   const { theme } = useTheme();
+  const createCategory = require('../hooks/useCategories').useCreateCategory();
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -45,6 +46,53 @@ export default function AddTransactionSheet({
   });
   const [showCalendar, setShowCalendar] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+
+  // New category form state
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState('#2196F3');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('home');
+  const [addCategoryError, setAddCategoryError] = useState('');
+
+  // Color and icon options (copied from SettingsScreen)
+  const colorOptions = [
+    '#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#607D8B',
+  ];
+  const iconOptions = [
+    { name: 'home', label: 'Home' },
+    { name: 'shopping-bag', label: 'Shopping' },
+    { name: 'utensils', label: 'Food' },
+    { name: 'credit-card', label: 'Bills' },
+    { name: 'film', label: 'Entertainment' },
+    { name: 'map', label: 'Transport' },
+    { name: 'book', label: 'Education' },
+    { name: 'briefcase', label: 'Work' },
+    { name: 'activity', label: 'Health' },
+    { name: 'gift', label: 'Gifts' },
+    { name: 'banknote', label: 'Income' },
+    { name: 'trending-up', label: 'Investments' },
+    { name: 'shower', label: 'Body Care' },
+    { name: 'car', label: 'Cab' },
+    { name: 'tshirt-crew', label: 'Clothes' },
+    { name: 'cellphone', label: 'Communications' },
+    { name: 'hand-heart', label: 'Donation' },
+    { name: 'silverware-fork-knife', label: 'Eating Out' },
+    { name: 'food', label: 'Ordered Food' },
+    { name: 'account-group', label: 'Family' },
+    { name: 'gas-station', label: 'Fuel' },
+    { name: 'laptop', label: 'Gadgets' },
+    { name: 'heart-pulse', label: 'Health' },
+    { name: 'hotel', label: 'Hotel' },
+    { name: 'airplane', label: 'Trip' },
+    { name: 'sofa', label: 'House Decor' },
+    { name: 'dots-horizontal', label: 'Miscellaneous' },
+    { name: 'parking', label: 'Parking' },
+    { name: 'flower-tulip', label: 'Puja' },
+    { name: 'monitor', label: 'Tech' },
+    { name: 'school', label: 'Study' },
+    { name: 'flash', label: 'Utilities' },
+    { name: 'delete', label: 'Waste' },
+  ];
 
   // Prefill form in edit mode
   useEffect(() => {
@@ -105,6 +153,39 @@ export default function AddTransactionSheet({
       onClose();
     } catch (error) {
       console.error('Error deleting transaction:', error);
+    }
+  };
+
+  // Add category handler (call SettingsScreen's logic for creating a category)
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) {
+      setAddCategoryError('Category name is required');
+      return;
+    }
+    try {
+      createCategory.mutate({
+        name: newCategoryName,
+        type: transactionType,
+        color: newCategoryColor,
+        icon: newCategoryIcon,
+      }, {
+        // onSuccess callback to select the new category
+        onSuccess: (data: { id?: number }) => {
+          // Try to set the new category as selected
+          if (data && data.id) {
+            setCategoryId(data.id.toString());
+          } else if (categories && categories.length > 0) {
+            // Fallback: select the last category (assuming it's appended)
+            setCategoryId(categories[categories.length - 1].id.toString());
+          }
+        }
+      });
+      setShowAddCategory(false);
+      setShowCategoryPicker(false);
+      setNewCategoryName('');
+      setAddCategoryError('');
+    } catch (e) {
+      setAddCategoryError('Failed to add category.');
     }
   };
 
@@ -269,12 +350,97 @@ export default function AddTransactionSheet({
             </ScrollView>
             <Button 
               mode="outlined"
+              onPress={() => setShowAddCategory(true)}
+              style={styles.pickerButton}
+              textColor={theme.colors.primary}
+            >
+              + Add Category
+            </Button>
+            <Button 
+              mode="outlined"
               onPress={() => setShowCategoryPicker(false)}
               style={styles.pickerButton}
               textColor={theme.colors.primary}
             >
               Cancel
             </Button>
+          </View>
+        </View>
+      </Modal>
+      {/* Add Category Modal */}
+      <Modal
+        visible={showAddCategory}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowAddCategory(false)}
+      >
+        <View style={styles.pickerModalOverlay}>
+          <View style={[styles.addCategoryDialog, { backgroundColor: theme.colors.surface, flexDirection: 'column' }]}> 
+            <ScrollView contentContainerStyle={{ paddingBottom: 8 }} showsVerticalScrollIndicator={false} style={{ flexGrow: 1 }}>
+              <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>Add Category</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Category Name</Text>
+              <TextInput
+                style={[styles.input, { color: theme.colors.text, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.placeholder, width: '100%' }]
+                }
+                placeholder="Category name"
+                placeholderTextColor={theme.colors.placeholder}
+                value={newCategoryName}
+                onChangeText={setNewCategoryName}
+              />
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Color</Text>
+              <View style={styles.colorGridSettings}>
+                {colorOptions.map((color) => (
+                  <TouchableOpacity
+                    key={color}
+                    style={[
+                      styles.colorOptionSettings,
+                      { backgroundColor: color },
+                      newCategoryColor === color && styles.selectedColorOptionSettings,
+                      newCategoryColor === color && { borderColor: theme.colors.primary },
+                    ]}
+                    onPress={() => setNewCategoryColor(color)}
+                  />
+                ))}
+              </View>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Icon</Text>
+              <View style={styles.iconGridSettings}>
+                {iconOptions.map((icon) => (
+                  <TouchableOpacity
+                    key={icon.name}
+                    style={[
+                      styles.iconOptionSettings,
+                      newCategoryIcon === icon.name && styles.selectedIconOptionSettings,
+                      newCategoryIcon === icon.name && { borderColor: theme.colors.primary },
+                    ]}
+                    onPress={() => setNewCategoryIcon(icon.name)}
+                  >
+                    <CategoryIcon 
+                      name={icon.name} 
+                      color={newCategoryIcon === icon.name ? newCategoryColor : theme.colors.placeholder}
+                      size={20}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {addCategoryError ? <Text style={styles.errorText}>{addCategoryError}</Text> : null}
+            </ScrollView>
+            <View style={styles.addCategoryActionsBar}>
+              <Button
+                onPress={() => setShowAddCategory(false)}
+                style={{ marginRight: 8 }}
+                textColor={theme.colors.primary}
+                mode="text"
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleAddCategory}
+                style={{ borderRadius: 8 }}
+              >
+                Save
+              </Button>
+            </View>
           </View>
         </View>
       </Modal>
@@ -470,5 +636,69 @@ const styles = StyleSheet.create({
   },
   pickerButton: {
     marginTop: 16,
+  },
+  addCategoryDialog: {
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: '85%',
+    alignSelf: 'center',
+  },
+  colorGridSettings: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  colorOptionSettings: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginBottom: 10,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedColorOptionSettings: {
+    borderWidth: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  iconGridSettings: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  iconOptionSettings: {
+    width: '22%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  selectedIconOptionSettings: {
+    borderWidth: 2,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  addCategoryActionsBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderColor: '#eee',
+    backgroundColor: 'transparent',
   },
 });
