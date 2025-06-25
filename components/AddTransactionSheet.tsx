@@ -325,6 +325,7 @@ export default function AddTransactionSheet({
               ) : (
                 categories
                   .filter(category => category.type === transactionType)
+                  .sort((a, b) => a.name.localeCompare(b.name))
                   .map((category) => (
                     <TouchableOpacity
                       key={category.id}

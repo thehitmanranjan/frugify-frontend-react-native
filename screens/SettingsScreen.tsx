@@ -80,12 +80,13 @@ interface CategoryItemProps {
 }
 
 function CategoryItem({ category, onEdit, onDelete }: CategoryItemProps) {
+  const { theme } = useTheme();
   return (
     <Card style={styles.categoryCard}>
       <View style={styles.categoryContent}>
         <View style={styles.categoryInfo}>
           <CategoryIcon name={category.icon} color={category.color} size={18} />
-          <Text style={styles.categoryName}>{category.name}</Text>
+          <Text style={[styles.categoryName, { color: theme.colors.text }]}>{category.name}</Text>
         </View>
         
         <View style={styles.categoryActions}>
@@ -132,8 +133,8 @@ export default function SettingsScreen() {
   const [selectedIcon, setSelectedIcon] = useState(iconOptions[0].name);
   
   // Filter categories by type
-  const expenseCategories = categories?.filter(c => c.type === 'expense') || [];
-  const incomeCategories = categories?.filter(c => c.type === 'income') || [];
+  const expenseCategories = (categories?.filter(c => c.type === 'expense').sort((a, b) => a.name.localeCompare(b.name))) || [];
+  const incomeCategories = (categories?.filter(c => c.type === 'income').sort((a, b) => a.name.localeCompare(b.name))) || [];
   const displayedCategories = currentTab === 'expense' ? expenseCategories : incomeCategories;
   
   // Open dialog for adding a new category
