@@ -25,12 +25,13 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { theme } = useTheme(); // Use theme from context
+  const { theme, isDarkMode } = useTheme(); // Get isDarkMode from context
 
   const [addTransactionVisible, setAddTransactionVisible] = useState(false);
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithCategory | null>(null);
   const [speechSheetVisible, setSpeechSheetVisible] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const showAddTransaction = (type: 'expense' | 'income') => {
     setTransactionType(type);
@@ -64,37 +65,87 @@ export default function HomeScreen() {
     </>
   );
 
-  // Render each transaction
-  const renderTransaction = ({ item }: { item: TransactionWithCategory }) => {
-    if (!item.category) return null;
+  // Group transactions by category id
+  const groupedTransactions = React.useMemo(() => {
+    if (!summary || !summary.transactions) return [];
+    const groups: { [key: string]: { category: TransactionWithCategory['category'], transactions: TransactionWithCategory[] } } = {};
+    summary.transactions.forEach((tx) => {
+      if (!tx.category) return;
+      const catId = tx.category.id.toString(); // Ensure string key
+      if (!groups[catId]) {
+        groups[catId] = { category: tx.category, transactions: [] };
+      }
+      groups[catId].transactions.push(tx);
+    });
+    return Object.values(groups);
+  }, [summary]);
+
+  // Choose card background color based on theme
+  const cardBackgroundColor = isDarkMode ? '#1e1e1e' : (theme.colors.surface || '#fff');
+
+  // Render a group summary row
+  const renderCategoryGroup = ({ item }: { item: { category: TransactionWithCategory['category'], transactions: TransactionWithCategory[] } }) => {
+    const catIdStr = item.category.id.toString();
+    const isExpanded = expandedCategory === catIdStr;
+    const total = item.transactions.reduce((sum, tx) => {
+      const amt = Number(tx.amount);
+      return sum + (!isNaN(amt) ? amt : 0);
+    }, 0);
     return (
-      <TouchableOpacity style={[styles.transactionCard, { backgroundColor: theme.colors.surface }]} onPress={() => showEditTransaction(item)}>
-        <CategoryIcon
-          name={item.category.icon}
-          color={item.category.color} // Category color should contrast with surface
-          size={18}
-          style={styles.categoryIcon}
-        />
-        <View style={styles.transactionDetails}>
-          <View style={styles.transactionHeader}>
+      <View>
+        <TouchableOpacity
+          style={[styles.transactionCard, { backgroundColor: cardBackgroundColor, flexDirection: 'row', alignItems: 'center' }]}
+          onPress={() => setExpandedCategory(isExpanded ? null : catIdStr)}
+        >
+          <CategoryIcon
+            name={item.category.icon}
+            color={item.category.color}
+            size={20}
+            style={styles.categoryIcon}
+          />
+          <View style={{ flex: 1 }}>
             <Text style={[styles.categoryName, { color: theme.colors.text }]}>{item.category.name}</Text>
-            <Text
-              style={[
-                styles.amount,
-                // Theme-specific income/expense colors can be defined in ThemeContext if needed
-                item.category.type === 'income' ? styles.incomeText : styles.expenseText,
-                { color: item.category.type === 'income' ? '#4CAF50' : '#F44336'}
-              ]}
-            >
-              {formatTransactionAmount(item.amount, item.category.type)}
-            </Text>
+            <Text style={{ color: theme.colors.placeholder, fontSize: 12 }}>{item.transactions.length} transaction{item.transactions.length > 1 ? 's' : ''}</Text>
           </View>
-          <View style={styles.transactionFooter}>
-            <Text style={[styles.description, { color: theme.colors.placeholder }]}>{item.description || item.category.name}</Text>
-            <Text style={[styles.date, { color: theme.colors.placeholder }]}>{formatTransactionDate(item.date)}</Text>
+          <Text
+            style={[
+              styles.amount,
+              item.category.type === 'income' ? styles.incomeText : styles.expenseText,
+              { color: item.category.type === 'income' ? '#4CAF50' : '#F44336' }
+            ]}
+          >
+            {formatTransactionAmount(total, item.category.type)}
+          </Text>
+          <MaterialCommunityIcons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={24} color={theme.colors.placeholder} style={{ marginLeft: 8 }} />
+        </TouchableOpacity>
+        {isExpanded && (
+          <View style={{ marginLeft: 24, marginTop: 4, marginBottom: 8 }}>
+            {item.transactions.map((tx) => (
+              <TouchableOpacity
+                key={tx.id}
+                style={[styles.transactionCard, { backgroundColor: cardBackgroundColor, marginHorizontal: 0, marginBottom: 8, padding: 10 }]}
+                onPress={() => showEditTransaction(tx)}
+              >
+                <View style={styles.transactionDetails}>
+                  <View style={styles.transactionHeader}>
+                    <Text style={[styles.description, { color: theme.colors.text }]}>{tx.description || tx.category.name}</Text>
+                    <Text style={[
+                      styles.amount,
+                      tx.category.type === 'income' ? styles.incomeText : styles.expenseText,
+                      { color: tx.category.type === 'income' ? '#4CAF50' : '#F44336', fontSize: 15 }
+                    ]}>
+                      {formatTransactionAmount(tx.amount, tx.category.type)}
+                    </Text>
+                  </View>
+                  <View style={styles.transactionFooter}>
+                    <Text style={[styles.date, { color: theme.colors.placeholder }]}>{formatTransactionDate(tx.date)}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
-        </View>
-      </TouchableOpacity>
+        )}
+      </View>
     );
   };
 
@@ -176,13 +227,13 @@ export default function HomeScreen() {
 
   // Main list
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}> 
       <Header />
-      <View style={[styles.content, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.content, { backgroundColor: theme.colors.background }]}> 
         <FlatList
-          data={summary.transactions}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderTransaction}
+          data={groupedTransactions}
+          keyExtractor={(item) => item.category.id.toString()}
+          renderItem={renderCategoryGroup}
           ListHeaderComponent={renderListHeader}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
