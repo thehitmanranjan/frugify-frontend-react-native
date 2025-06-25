@@ -506,10 +506,10 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.4)', // overlay can stay
   },
   sheetContainer: {
-    backgroundColor: 'white',
+    // backgroundColor: 'white',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     minHeight: '60%',
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 8,
-    color: '#333',
+    // color: '#333',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -549,8 +549,8 @@ const styles = StyleSheet.create({
   inputPrefix: {
     paddingHorizontal: 12,
     paddingVertical: 12,
-    color: '#666',
-    backgroundColor: '#f5f5f5',
+    // color: '#666',
+    // backgroundColor: '#f5f5f5',
   },
   input: {
     flex: 1,
@@ -577,11 +577,11 @@ const styles = StyleSheet.create({
   },
   selectValue: {
     fontSize: 16,
-    color: '#333',
+    // color: '#333',
   },
   selectPlaceholder: {
     fontSize: 16,
-    color: '#999',
+    // color: '#999',
   },
   errorText: {
     color: '#F44336',
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   pickerContainer: {
-    backgroundColor: 'white',
+    // backgroundColor: 'white',
     borderRadius: 12,
     padding: 20,
     width: '85%',
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
   pickerMessage: {
     textAlign: 'center',
     padding: 20,
-    color: '#666',
+    // color: '#666',
   },
   pickerButton: {
     marginTop: 16,

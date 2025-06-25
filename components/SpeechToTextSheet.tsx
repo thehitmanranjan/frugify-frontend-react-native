@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Tex
 import { MaterialIcons } from '@expo/vector-icons';
 import SpeechToTextMic from './SpeechToTextMic';
 import { useCreateTransactionFromSpeech } from '../hooks/useCreateTransactionFromSpeech';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SpeechToTextSheetProps {
   isVisible: boolean;
@@ -13,6 +14,7 @@ export default function SpeechToTextSheet({ isVisible, onClose }: SpeechToTextSh
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState('');
   const createTransactionFromSpeech = useCreateTransactionFromSpeech();
+  const { theme, isDarkMode } = useTheme();
 
   const handleContinue = async () => {
     if (!transcript.trim()) return;
@@ -34,33 +36,34 @@ export default function SpeechToTextSheet({ isVisible, onClose }: SpeechToTextSh
       onRequestClose={onClose}
     >
       <View style={styles.modalContainer}>
-        <View style={styles.sheetContainer}>
+        <View style={[styles.sheetContainer, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.header}>
-            <Text style={styles.title}>Frugify Command</Text>
+            <Text style={[styles.title, { color: theme.colors.text }]}>Frugify Command</Text>
             <TouchableOpacity onPress={onClose}>
-              <MaterialIcons name="close" size={24} color="#333" />
+              <MaterialIcons name="close" size={24} color={theme.colors.text} />
             </TouchableOpacity>
           </View>
           <View style={styles.content}>
             <SpeechToTextMic onTranscription={setTranscript} />
-            <Text style={styles.transcriptLabel}>Command:</Text>
-            <View style={styles.transcriptBox}>
+            <Text style={[styles.transcriptLabel, { color: theme.colors.text }]}>Command:</Text>
+            <View style={[styles.transcriptBox, { backgroundColor: isDarkMode ? '#23272e' : '#f5f5f5' }]}>
               <TextInput
-                style={styles.transcriptText}
+                style={[styles.transcriptText, { color: theme.colors.text }]}
                 value={transcript}
                 onChangeText={setTranscript}
                 placeholder="Eg: I went to McDonald's to eat Mc Veggie Burger worth ₹250..."
+                placeholderTextColor={theme.colors.placeholder}
                 multiline
                 editable
               />
             </View>
-            {error ? <Text style={{ color: 'red', marginTop: 8 }}>{error}</Text> : null}
+            {error ? <Text style={{ color: theme.colors.error || 'red', marginTop: 8 }}>{error}</Text> : null}
           </View>
-          <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={createTransactionFromSpeech.isPending}>
+          <TouchableOpacity style={[styles.continueButton, { backgroundColor: theme.colors.primary }]} onPress={handleContinue} disabled={createTransactionFromSpeech.isPending}>
             {createTransactionFromSpeech.isPending ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={theme.colors.onPrimary || '#fff'} />
             ) : (
-              <MaterialIcons name="arrow-forward" size={28} color="#fff" />
+              <MaterialIcons name="arrow-forward" size={28} color={theme.colors.onPrimary || '#fff'} />
             )}
           </TouchableOpacity>
         </View>
@@ -76,7 +79,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   sheetContainer: {
-    backgroundColor: 'white',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     minHeight: 220,
@@ -104,13 +106,11 @@ const styles = StyleSheet.create({
   transcriptBox: {
     minHeight: 60,
     width: '100%',
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     padding: 12,
     marginTop: 8,
   },
   transcriptText: {
-    color: '#333',
     fontSize: 16,
   },
   transcriptPlaceholder: {
@@ -120,7 +120,6 @@ const styles = StyleSheet.create({
   continueButton: {
     marginTop: 24,
     alignSelf: 'flex-end',
-    backgroundColor: '#007AFF',
     borderRadius: 24,
     padding: 12,
     elevation: 2,
