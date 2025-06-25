@@ -31,7 +31,7 @@ export default function HomeScreen() {
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithCategory | null>(null);
   const [speechSheetVisible, setSpeechSheetVisible] = useState(false);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
   const showAddTransaction = (type: 'expense' | 'income') => {
     setTransactionType(type);
@@ -86,16 +86,23 @@ export default function HomeScreen() {
   // Render a group summary row
   const renderCategoryGroup = ({ item }: { item: { category: TransactionWithCategory['category'], transactions: TransactionWithCategory[] } }) => {
     const catIdStr = item.category.id.toString();
-    const isExpanded = expandedCategory === catIdStr;
+    const isExpanded = expandedCategories.includes(catIdStr);
     const total = item.transactions.reduce((sum, tx) => {
       const amt = Number(tx.amount);
       return sum + (!isNaN(amt) ? amt : 0);
     }, 0);
+    const handleToggleExpand = () => {
+      setExpandedCategories((prev) =>
+        prev.includes(catIdStr)
+          ? prev.filter((id) => id !== catIdStr)
+          : [...prev, catIdStr]
+      );
+    };
     return (
       <View>
         <TouchableOpacity
           style={[styles.transactionCard, { backgroundColor: cardBackgroundColor, flexDirection: 'row', alignItems: 'center' }]}
-          onPress={() => setExpandedCategory(isExpanded ? null : catIdStr)}
+          onPress={handleToggleExpand}
         >
           <CategoryIcon
             name={item.category.icon}
