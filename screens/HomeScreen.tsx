@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSummary } from '../hooks/useTransactions';
 import { useDate } from '../contexts/DateContext';
 import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
+import { useProcessPendingMessages } from '../hooks/useProcessPendingMessages'; // Import the new hook
 import { getQueryTimeFormat } from '../lib/date-utils';
 import { formatTransactionDate } from '../lib/date-utils';
 import { formatTransactionAmount } from '../lib/formatters';
@@ -26,6 +27,7 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme, isDarkMode } = useTheme(); // Get isDarkMode from context
+  useProcessPendingMessages(); // Initialize and run the hook
 
   const [addTransactionVisible, setAddTransactionVisible] = useState(false);
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');

@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { StackNavigationProp } from '@react-navigation/stack';
 import InsightsSheet from './InsightsSheet';
+import TransactionalMessagesSheet from './TransactionalMessagesSheet'; // Import the new sheet
 import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
 
 type RootStackParamList = {
@@ -21,6 +22,7 @@ export default function Header() {
   const { theme } = useTheme(); // Use theme from context
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [insightsVisible, setInsightsVisible] = useState(false);
+  const [transactionalMessagesVisible, setTransactionalMessagesVisible] = useState(false); // State for new sheet
 
   return (
     <>
@@ -38,6 +40,13 @@ export default function Header() {
           <TouchableOpacity style={styles.iconButton}>
             <MaterialCommunityIcons name="magnify" size={24} color={theme.colors.text} />
           </TouchableOpacity>
+          {/* New Icon for Transactional Messages */}
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => setTransactionalMessagesVisible(true)} // Open the new sheet
+          >
+            <MaterialCommunityIcons name="message-text-outline" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
           <TouchableOpacity 
             style={styles.iconButton}
             onPress={() => setInsightsVisible(true)}
@@ -53,6 +62,10 @@ export default function Header() {
         </View>
       </View>
       <InsightsSheet isVisible={insightsVisible} onClose={() => setInsightsVisible(false)} />
+      <TransactionalMessagesSheet
+        isVisible={transactionalMessagesVisible}
+        onClose={() => setTransactionalMessagesVisible(false)}
+      />
       {/* Side Drawer */}
       {drawerVisible && (
         <View style={styles.drawerOverlay}>
