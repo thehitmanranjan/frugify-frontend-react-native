@@ -16,6 +16,7 @@ import SignupScreen from './screens/SignupScreen';
 import { DateProvider } from './contexts/DateContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'; // Import ThemeProvider and useTheme
+import { PaperProvider } from 'react-native-paper'; // Import PaperProvider
 
 // API Client
 import { queryClient } from './lib/apiClient';
@@ -172,9 +173,11 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
-          <DateProvider>
-            <MainScreen />
-          </DateProvider>
+          <PaperProvider>
+            <DateProvider>
+              <MainScreen />
+            </DateProvider>
+          </PaperProvider>
         </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
