@@ -6,6 +6,8 @@
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
   <uses-permission android:name="android.permission.VIBRATE"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+  <!-- Permission required for Notification Listener Service -->
+  <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"/>
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
@@ -32,5 +34,15 @@
       </intent-filter>
     </activity>
     <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" android:exported="false"/>
+
+    <!-- Declare the Notification Listener Service -->
+    <service android:name=".NotificationListener"
+             android:label="@string/app_name"
+             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+             android:exported="true">
+      <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+      </intent-filter>
+    </service>
   </application>
 </manifest>

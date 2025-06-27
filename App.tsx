@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -16,10 +17,13 @@ import SignupScreen from './screens/SignupScreen';
 import { DateProvider } from './contexts/DateContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'; // Import ThemeProvider and useTheme
+import { PaperProvider } from 'react-native-paper'; // Import PaperProvider
 
 // API Client
 import { queryClient } from './lib/apiClient';
 import { navigationRef } from './lib/RootNavigation';
+import NotificationModule from './lib/NativeNotificationListener';
+import { ensureNotificationListenerPermission, syncTransactionalMessages } from './lib/NativeNotificationListener';
 
 // Types
 export type RootStackParamList = {
@@ -168,13 +172,37 @@ const MainScreen = () => {
 };
 
 export default function App() {
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        await ensureNotificationListenerPermission();
+        syncTransactionalMessages();
+      }
+      appState.current = nextAppState;
+    };
+
+    // Initial call on mount
+    (async () => {
+      await ensureNotificationListenerPermission();
+      syncTransactionalMessages();
+    })();
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
-          <DateProvider>
-            <MainScreen />
-          </DateProvider>
+          <PaperProvider>
+            <DateProvider>
+              <MainScreen />
+            </DateProvider>
+          </PaperProvider>
         </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
