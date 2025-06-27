@@ -1,4 +1,6 @@
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules, Platform, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiRequest } from './apiClient';
 
 const LINKING_ERROR =
   `The package 'frugify-notification-listener' doesn't seem to be linked. Make sure: \n\n` +
@@ -19,7 +21,7 @@ interface NotificationModuleType {
   requestNotificationListenerPermission: () => void;
 }
 
-const NotificationModule = NativeModules.NotificationModule
+const NotificationModule: NotificationModuleType = NativeModules.NotificationModule
   ? (NativeModules.NotificationModule as NotificationModuleType)
   : new Proxy(
       {},
@@ -28,7 +30,75 @@ const NotificationModule = NativeModules.NotificationModule
           throw new Error(LINKING_ERROR);
         },
       }
-    );
+    ) as NotificationModuleType;
+
+/**
+ * Syncs transactional messages: fetches, processes, and clears them after success.
+ */
+export async function syncTransactionalMessages() {
+  try {
+    const messages = await NotificationModule.getTransactionalMessages();
+    if (!messages || messages.length === 0) return;
+    for (const msg of messages) {
+      try {
+        // Process each message via AI endpoint with source: 'message'
+        await apiRequest<any>('POST', '/ai/createTransaction', { text: msg.message, source: 'message' }, undefined, true);
+      } catch (err) {
+        // Log and skip failed messages, do not clear
+        console.error('Failed to process transactional message:', err);
+        return;
+      }
+    }
+    // If all processed, clear messages
+    await NotificationModule.clearTransactionalMessages();
+  } catch (err) {
+    console.error('Error syncing transactional messages:', err);
+  }
+}
+
+// Utility to request notification listener permission with explanation
+export async function ensureNotificationListenerPermission() {
+  try {
+    const dontAskAgain = await AsyncStorage.getItem('dontAskNotificationPermission');
+    if (dontAskAgain === 'true') {
+      return; // Skip asking for permission
+    }
+
+    const enabled = await NotificationModule.isNotificationListenerEnabled();
+    if (!enabled) {
+      Alert.alert(
+        'Permission Required',
+        'Frugify needs notification access to read your transactional messages and auto-sync your transactions. Please grant notification listener permission.',
+        [
+          {
+            text: "Don't Ask Again",
+            onPress: async () => {
+              await AsyncStorage.setItem('dontAskNotificationPermission', 'true');
+              Alert.alert(
+                'Reminder',
+                'You will need to manually grant notification listener permission from the settings app.',
+                [{ text: 'OK' }]
+              );
+            },
+            style: 'destructive',
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Allow',
+            onPress: () => NotificationModule.requestNotificationListenerPermission(),
+          },
+        ],
+        { cancelable: true }
+      );
+    }
+  } catch (err) {
+    // fallback: just try to request
+    NotificationModule.requestNotificationListenerPermission();
+  }
+}
 
 export default NotificationModule;
 export type { TransactionalMessage };

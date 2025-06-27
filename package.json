@@ -37,7 +37,8 @@
     "react-native-vector-icons": "^10.0.3",
     "react-native-web": "~0.19.6",
     "zod": "^3.22.4",
-    "expo-modules-core": "~1.11.14"
+    "expo-modules-core": "~1.11.14",
+    "expo-updates": "~0.24.13"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
