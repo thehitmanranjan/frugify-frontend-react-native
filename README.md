@@ -81,9 +81,42 @@ Due to network restrictions on company laptops, **ExpoGo might not work**. In su
 
 ---
 
+## 3. Using Bare Workflow (Manual APK Build)
+
+If you are using the **bare workflow** (not managed by Expo), you can build the APK manually using Gradle:
+
+### Steps:
+
+1. Go to your project’s `android/` directory:
+
+   ```powershell
+   cd android
+   ```
+
+2. Run the Gradle build:
+
+   ```powershell
+   .\gradlew.bat assembleRelease
+   ```
+
+3. After it builds, find the APK here:
+
+   ```
+   android/app/build/outputs/apk/release/app-release.apk
+   ```
+
+4. Install the APK on your device:
+
+   ```powershell
+   adb install android/app/build/outputs/apk/release/app-release.apk
+   ```
+
+---
+
 ## Summary
 
 | Method         | Recommended For       | Notes                                                                 |
-|----------------|-----------------------|-----------------------------------------------------------------------|
-| **ExpoGo**     | Personal laptops      | Fast and simple; works over same Wi-Fi network                        |
-| **Dev Client** | Company laptops       | Requires custom build; works even with network restrictions           |
+|----------------|----------------------|-----------------------------------------------------------------------|
+| **ExpoGo**     | Personal laptops     | Fast and simple; works over same Wi-Fi network                        |
+| **Dev Client** | Company laptops      | Requires custom build; works even with network restrictions           |
+| **Bare**       | Bare workflow users  | Manual Gradle build; APK found in `android/app/build/outputs/apk/release/`|
