@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Animated, Easing } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { StackNavigationProp } from '@react-navigation/stack';
 import InsightsSheet from './InsightsSheet';
 import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
+import { useSync } from '../contexts/SyncContext';
 
 type RootStackParamList = {
   Home: undefined;
@@ -19,6 +20,30 @@ export default function Header() {
   const navigation = useNavigation<NavigationProp>();
   const { logout } = useAuth();
   const { theme } = useTheme(); // Use theme from context
+  const { syncing, triggerSync } = useSync();
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (syncing) {
+      Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      rotateAnim.stopAnimation();
+      rotateAnim.setValue(0);
+    }
+  }, [syncing, rotateAnim]);
+
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [insightsVisible, setInsightsVisible] = useState(false);
 
@@ -37,6 +62,15 @@ export default function Header() {
         <View style={styles.rightContainer}>
           <TouchableOpacity style={styles.iconButton}>
             <MaterialCommunityIcons name="magnify" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={triggerSync}>
+            <Animated.View style={{ transform: [{ rotate: spin }] }}>
+              <MaterialCommunityIcons
+                name="refresh"
+                size={24}
+                color={theme.colors.text}
+              />
+            </Animated.View>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.iconButton}

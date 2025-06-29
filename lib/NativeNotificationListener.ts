@@ -1,6 +1,6 @@
 import { NativeModules, Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiRequest } from './apiClient';
+import { apiRequest, queryClient } from './apiClient';
 
 const LINKING_ERROR =
   `The package 'frugify-notification-listener' doesn't seem to be linked. Make sure: \n\n` +
@@ -46,13 +46,29 @@ export async function syncTransactionalMessages() {
       } catch (err) {
         // Log and skip failed messages, do not clear
         console.error('Failed to process transactional message:', err);
+        // onError logic
+        if (err instanceof Error) {
+          console.error('Error creating transaction from message:', err.message);
+        }
         return;
       }
     }
     // If all processed, clear messages
     await NotificationModule.clearTransactionalMessages();
+    // onSuccess logic (invalidate queries)
+    if (typeof queryClient !== 'undefined') {
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/transactions/summary'],
+        exact: false
+      });
+    }
   } catch (err) {
     console.error('Error syncing transactional messages:', err);
+    // onError logic
+    if (err instanceof Error) {
+      console.error('Error creating transaction from message:', err.message);
+    }
   }
 }
 

@@ -18,12 +18,14 @@ import { DateProvider } from './contexts/DateContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'; // Import ThemeProvider and useTheme
 import { PaperProvider } from 'react-native-paper'; // Import PaperProvider
+import { SyncProvider } from './contexts/SyncContext';
+import { SyncManager } from './contexts/SyncManager';
 
 // API Client
 import { queryClient } from './lib/apiClient';
 import { navigationRef } from './lib/RootNavigation';
 import NotificationModule from './lib/NativeNotificationListener';
-import { ensureNotificationListenerPermission, syncTransactionalMessages } from './lib/NativeNotificationListener';
+import { ensureNotificationListenerPermission } from './lib/NativeNotificationListener';
 
 // Types
 export type RootStackParamList = {
@@ -169,7 +171,7 @@ const MainScreen = () => {
       <StatusBar style={theme.dark ? "light" : "dark"} />
     </NavigationContainer>
   );
-};
+}
 
 export default function App() {
   const appState = useRef<AppStateStatus>(AppState.currentState);
@@ -178,7 +180,6 @@ export default function App() {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         await ensureNotificationListenerPermission();
-        syncTransactionalMessages();
       }
       appState.current = nextAppState;
     };
@@ -186,7 +187,6 @@ export default function App() {
     // Initial call on mount
     (async () => {
       await ensureNotificationListenerPermission();
-      syncTransactionalMessages();
     })();
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
@@ -200,7 +200,10 @@ export default function App() {
         <ThemeProvider>
           <PaperProvider>
             <DateProvider>
-              <MainScreen />
+              <SyncProvider>
+                <SyncManager />
+                <MainScreen />
+              </SyncProvider>
             </DateProvider>
           </PaperProvider>
         </ThemeProvider>
