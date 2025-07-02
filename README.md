@@ -95,18 +95,23 @@ If you are using the **bare workflow** (not managed by Expo), you can build the 
 
 2. Run the Gradle build:
 
-    For a release build:
+    For a release APK build:
    ```powershell
    .\gradlew.bat assembleRelease
    ```
 
-   Or for a debug build:
+   Or for a debug APK build:
 
    ```powershell
    .\gradlew.bat assembleDebug
    ```
 
-3. After it builds, find the APK here:
+    For a release AAB (Android App Bundle) build:
+   ```powershell
+   .\gradlew.bat bundleRelease
+   ```
+
+3. After it builds, find the APK or AAB here:
 
    - **Release APK:**
      ```
@@ -115,6 +120,10 @@ If you are using the **bare workflow** (not managed by Expo), you can build the 
    - **Debug APK:**
      ```
      android/app/build/outputs/apk/debug/app-debug.apk
+     ```
+   - **Release AAB:**
+     ```
+     android/app/build/outputs/bundle/release/app-release.aab
      ```
 
 4. Install the APK on your device:
