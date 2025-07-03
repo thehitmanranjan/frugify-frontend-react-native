@@ -80,13 +80,32 @@ interface CategoryItemProps {
 }
 
 function CategoryItem({ category, onEdit, onDelete }: CategoryItemProps) {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
+  // Only override for light mode; keep dark mode as before
+  const cardStyle = isDarkMode
+    ? styles.categoryCard
+    : [
+        styles.categoryCard,
+        {
+          backgroundColor: '#fff',
+          borderColor: '#E0E0E0',
+          borderWidth: 1,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.1,
+          shadowRadius: 2,
+          elevation: 2,
+        },
+      ];
+  const textStyle = isDarkMode
+    ? [styles.categoryName, { color: theme.colors.text }]
+    : [styles.categoryName, { color: '#222' }];
   return (
-    <Card style={styles.categoryCard}>
+    <Card style={cardStyle}>
       <View style={styles.categoryContent}>
         <View style={styles.categoryInfo}>
           <CategoryIcon name={category.icon} color={category.color} size={18} />
-          <Text style={[styles.categoryName, { color: theme.colors.text }]}>{category.name}</Text>
+          <Text style={textStyle}>{category.name}</Text>
         </View>
         
         <View style={styles.categoryActions}>
