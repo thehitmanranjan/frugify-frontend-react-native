@@ -7,9 +7,11 @@ const DEEPGRAM_API_KEY = '47246cbc117731cfd2833b78c6c70c62527597a7'; // Replace 
 
 interface SpeechToTextMicProps {
   onTranscription?: (transcript: string) => void;
+  size?: number;
+  backgroundColor?: string;
 }
 
-export default function SpeechToTextMic({ onTranscription }: SpeechToTextMicProps) {
+export default function SpeechToTextMic({ onTranscription, size = 32, backgroundColor = '#007AFF' }: SpeechToTextMicProps) {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -74,10 +76,10 @@ export default function SpeechToTextMic({ onTranscription }: SpeechToTextMicProp
     <View style={styles.container}>
       <TouchableOpacity
         onPress={recording ? stopRecording : startRecording}
-        style={styles.micButton}
+        style={[styles.micButton, { backgroundColor, width: size + 16, height: size + 16, borderRadius: (size + 16) / 2 }]}
         disabled={isLoading}
       >
-        <MaterialIcons name={recording ? 'stop' : 'mic'} size={32} color="#fff" />
+        <MaterialIcons name={recording ? 'stop' : 'mic'} size={size} color="#fff" />
       </TouchableOpacity>
       {isLoading && <ActivityIndicator style={{ marginLeft: 10 }} />}
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -88,9 +90,9 @@ export default function SpeechToTextMic({ onTranscription }: SpeechToTextMicProp
 const styles = StyleSheet.create({
   container: { flexDirection: 'row', alignItems: 'center' },
   micButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 24,
-    padding: 12,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   error: { color: 'red', marginLeft: 10 },
 });
