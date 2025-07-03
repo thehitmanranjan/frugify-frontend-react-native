@@ -7,8 +7,6 @@ const API_BASE_URL = 'https://mithilafoods1.com';
 const AI_BASE_URL = 'https://frugify.in'; // Base URL for AI-related endpoints
 // const AI_BASE_URL = 'http://localhost:8000'; // Uncomment for local development
 
-
-
 // Log the selected API URL for debugging
 console.log(`Using API base URL: ${API_BASE_URL || 'relative paths (same domain)'}`);
 
