@@ -94,7 +94,7 @@ export default function BudgetSummary() {
   }));
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}> 
       {showChart ? (
         <View>
           <PieChart
@@ -121,6 +121,21 @@ export default function BudgetSummary() {
             left: screenWidth / 2 - 75,
             backgroundColor: theme.colors.surface,
           }]} />
+          {/* Centered Balance in Doughnut */}
+          <View style={[
+            styles.centerContent,
+            {
+              width: 150,
+              height: 150,
+              top: 165 - 75,
+              left: screenWidth / 2 - 75,
+              position: 'absolute',
+              zIndex: 11,
+            },
+          ]} pointerEvents="none">
+            <Text style={[styles.balanceLabel, { color: theme.colors.placeholder } ]}>Balance</Text>
+            <Text style={[styles.balanceValue, { color: theme.colors.text } ]}>{formatCurrency(summary.balance)}</Text>
+          </View>
         </View>
       ) : (
         <View style={styles.noDataContainer}>
@@ -128,21 +143,20 @@ export default function BudgetSummary() {
         </View>
       )}
 
-      <View style={styles.centerContent}>
-        <Text style={[styles.balanceLabel, { color: theme.colors.placeholder } ]}>Balance</Text>
-        <Text style={[styles.balanceValue, { color: theme.colors.text } ]}>{formatCurrency(summary.balance)}</Text>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryLabel, { color: theme.colors.placeholder } ]}>Income</Text>
-            <Text style={[styles.summaryValue, styles.incomeText, { color: '#4CAF50' } ]}>
-              {formatCurrency(summary.income)}
-            </Text>
+      {/* Modern Income & Expense Card Row */}
+      <View style={styles.summaryCardRow}>
+        <View style={[styles.summaryCard, { backgroundColor: '#E8F5E9' }]}> 
+          <MaterialCommunityIcons name="arrow-down-bold-circle" size={28} color="#4CAF50" style={{ marginRight: 8 }} />
+          <View>
+            <Text style={[styles.cardLabel, { color: '#388E3C' }]}>Income</Text>
+            <Text style={[styles.cardValue, { color: '#388E3C' }]} numberOfLines={1} ellipsizeMode="tail">{formatCurrency(summary.income)}</Text>
           </View>
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryLabel, { color: theme.colors.placeholder } ]}>Expense</Text>
-            <Text style={[styles.summaryValue, styles.expenseText, { color: '#F44336' } ]}>
-              {formatCurrency(summary.expense)}
-            </Text>
+        </View>
+        <View style={[styles.summaryCard, { backgroundColor: '#FFEBEE' }]}> 
+          <MaterialCommunityIcons name="arrow-up-bold-circle" size={28} color="#F44336" style={{ marginRight: 8 }} />
+          <View>
+            <Text style={[styles.cardLabel, { color: '#C62828' }]}>Expense</Text>
+            <Text style={[styles.cardValue, { color: '#C62828' }]} numberOfLines={1} ellipsizeMode="tail">{formatCurrency(summary.expense)}</Text>
           </View>
         </View>
       </View>
@@ -152,7 +166,7 @@ export default function BudgetSummary() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 16,
+    paddingVertical: 0,
     position: 'relative',
     minHeight: 220,
   },
@@ -193,14 +207,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   centerContent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
   },
   balanceLabel: {
     fontSize: 14,
@@ -209,7 +217,6 @@ const styles = StyleSheet.create({
   balanceValue: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 8,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -238,6 +245,7 @@ const styles = StyleSheet.create({
     height: 220,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 10, // Add a small space from the top
   },
   noDataText: {
     color: '#666',
@@ -249,5 +257,37 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 75,
     zIndex: 5,
+  },
+  summaryCardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    marginTop: 0,
+    marginBottom: 8,
+    gap: 12,
+  },
+  summaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    minWidth: 140,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    backgroundColor: '#fff',
+  },
+  cardLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  cardValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    maxWidth: 120,
   },
 });
