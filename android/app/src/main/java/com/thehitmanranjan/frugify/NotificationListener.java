@@ -40,7 +40,13 @@ public class NotificationListener extends NotificationListenerService {
     public void onNotificationPosted(StatusBarNotification sbn) {
         super.onNotificationPosted(sbn);
 
+
         String packageName = sbn.getPackageName();
+        // Exclude Gmail notifications to avoid duplication
+        if ("com.google.android.gm".equals(packageName)) {
+            Log.d(TAG, "Ignoring Gmail notification to avoid duplication.");
+            return;
+        }
         boolean isTargetApp = false;
         for (String app : TARGET_APPS) {
             if (app.equals(packageName)) {
