@@ -12,11 +12,18 @@ type RootStackParamList = {
   Home: undefined;
   Budget: undefined;
   Settings: undefined;
+  Categories: undefined;
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-export default function Header() {
+interface HeaderProps {
+  showBackButton?: boolean;
+  title?: string;
+  onBackPress?: () => void;
+}
+
+export default function Header({ showBackButton = false, title, onBackPress }: HeaderProps = {}) {
   const navigation = useNavigation<NavigationProp>();
   const { logout } = useAuth();
   const { theme } = useTheme(); // Use theme from context
@@ -47,43 +54,66 @@ export default function Header() {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [insightsVisible, setInsightsVisible] = useState(false);
 
+  const handleBackPress = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else {
+      navigation.goBack();
+    }
+  };
+
   return (
     <>
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.leftContainer}>
-          <TouchableOpacity 
-            style={styles.iconButton}
-            onPress={() => setDrawerVisible(true)}
-          >
-            <MaterialCommunityIcons name="menu" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: theme.colors.text }]}>Frugify</Text>
+          {showBackButton ? (
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={handleBackPress}
+            >
+              <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => setDrawerVisible(true)}
+            >
+              <MaterialCommunityIcons name="menu" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          )}
+          <Text style={[styles.title, { color: theme.colors.text }]}>
+            {title || 'Frugify'}
+          </Text>
         </View>
         <View style={styles.rightContainer}>
-          <TouchableOpacity style={styles.iconButton}>
-            <MaterialCommunityIcons name="magnify" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={triggerSync}>
-            <Animated.View style={{ transform: [{ rotate: spin }] }}>
-              <MaterialCommunityIcons
-                name="refresh"
-                size={24}
-                color={theme.colors.text}
-              />
-            </Animated.View>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.iconButton}
-            onPress={() => setInsightsVisible(true)}
-          >
-            <MaterialCommunityIcons name="information-outline" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.iconButton}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <MaterialCommunityIcons name="cog" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
+          {!showBackButton && (
+            <>
+              <TouchableOpacity style={styles.iconButton}>
+                <MaterialCommunityIcons name="magnify" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton} onPress={triggerSync}>
+                <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                  <MaterialCommunityIcons
+                    name="refresh"
+                    size={24}
+                    color={theme.colors.text}
+                  />
+                </Animated.View>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.iconButton}
+                onPress={() => setInsightsVisible(true)}
+              >
+                <MaterialCommunityIcons name="information-outline" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.iconButton}
+                onPress={() => navigation.navigate('Settings')}
+              >
+                <MaterialCommunityIcons name="cog" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
       <InsightsSheet isVisible={insightsVisible} onClose={() => setInsightsVisible(false)} />

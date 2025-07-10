@@ -6,12 +6,15 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Touchable, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Dialog, Portal, TextInput as PaperTextInput, Button } from 'react-native-paper';
 
 // Screens
 import HomeScreen from './screens/HomeScreen';
 import BudgetScreen from './screens/BudgetScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import CategoriesScreen from './screens/CategoriesScreen';
 import SignupScreen from './screens/SignupScreen';
+import EmailOtpScreen from './screens/EmailOtpScreen';
 
 // Context
 import { DateProvider } from './contexts/DateContext';
@@ -32,6 +35,7 @@ export type RootStackParamList = {
   Home: undefined;
   Budget: undefined;
   Settings: undefined;
+  Categories: undefined;
 };
 
 // Create the stack navigator
@@ -48,6 +52,7 @@ const AppNavigator = () => (
     <Stack.Screen name="Home" component={HomeScreen} />
     <Stack.Screen name="Budget" component={BudgetScreen} />
     <Stack.Screen name="Settings" component={SettingsScreen} />
+    <Stack.Screen name="Categories" component={CategoriesScreen} />
   </Stack.Navigator>
 );
 
@@ -56,20 +61,33 @@ const MainScreen = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const { theme } = useTheme(); // Use theme from context
   const [showSignup, setShowSignup] = React.useState(false);
+  const [showEmailOtp, setShowEmailOtp] = React.useState(false);
+  const [verifiedEmail, setVerifiedEmail] = React.useState('');
+  const [emailToken, setEmailToken] = React.useState('');
   const [signupPrompt, setSignupPrompt] = React.useState(false);
 
   // Custom login handler to show signup prompt if user not found
   const LoginWithSignupPrompt = () => {
-    const { login } = useAuth();
+    const { login, sendOtp, verifyOtp, forgotPassword } = useAuth();
     const { theme } = useTheme(); // Use theme from context
     const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [loading, setLoading] = React.useState(false);
     const [showPassword, setShowPassword] = React.useState(false);
+    
+    // Forgot password state
+    const [forgotPasswordVisible, setForgotPasswordVisible] = React.useState(false);
+    const [currentStep, setCurrentStep] = React.useState<'email' | 'otp' | 'password'>('email');
+    const [email, setEmail] = React.useState('');
+    const [otp, setOtp] = React.useState('');
+    const [newPassword, setNewPassword] = React.useState('');
+    const [confirmPassword, setConfirmPassword] = React.useState('');
+    const [emailToken, setEmailToken] = React.useState('');
+    const [forgotPasswordLoading, setForgotPasswordLoading] = React.useState(false);
 
     const handleLogin = async () => {
       if (!username.trim() || !password.trim()) {
-        Alert.alert('Validation Error', 'Username and password cannot be empty.');
+        Alert.alert('Validation Error', 'Username/Email and password cannot be empty.');
         return;
       }
       setLoading(true);
@@ -86,6 +104,86 @@ const MainScreen = () => {
       }
     };
 
+    const handleForgotPassword = () => {
+      setCurrentStep('email');
+      setForgotPasswordVisible(true);
+    };
+
+    const handleSendOtp = async () => {
+      if (!email.trim()) {
+        Alert.alert('Error', 'Please enter your username or email');
+        return;
+      }
+
+      setForgotPasswordLoading(true);
+      try {
+        await sendOtp(email, 'reset_password');
+        setCurrentStep('otp');
+        Alert.alert('Success', 'OTP sent to your registered email');
+      } catch (error) {
+        Alert.alert('Error', 'Failed to send OTP. Please try again.');
+      } finally {
+        setForgotPasswordLoading(false);
+      }
+    };
+
+    const handleVerifyOtp = async () => {
+      if (!otp.trim()) {
+        Alert.alert('Error', 'Please enter the OTP');
+        return;
+      }
+
+      setForgotPasswordLoading(true);
+      try {
+        const token = await verifyOtp(email, otp);
+        setEmailToken(token);
+        setCurrentStep('password');
+        Alert.alert('Success', 'OTP verified successfully');
+      } catch (error) {
+        Alert.alert('Error', 'Invalid OTP. Please try again.');
+      } finally {
+        setForgotPasswordLoading(false);
+      }
+    };
+
+    const handleResetPassword = async () => {
+      if (!newPassword.trim()) {
+        Alert.alert('Error', 'Please enter a new password');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        Alert.alert('Error', 'Password must be at least 6 characters long');
+        return;
+      }
+
+      setForgotPasswordLoading(true);
+      try {
+        await forgotPassword(email, newPassword, emailToken);
+        setForgotPasswordVisible(false);
+        resetForgotPasswordForm();
+        Alert.alert('Success', 'Password reset successfully! You can now login with your new password.');
+      } catch (error) {
+        Alert.alert('Error', 'Failed to reset password. Please try again.');
+      } finally {
+        setForgotPasswordLoading(false);
+      }
+    };
+
+    const resetForgotPasswordForm = () => {
+      setCurrentStep('email');
+      setEmail('');
+      setOtp('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setEmailToken('');
+    };
+
     return (
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -96,7 +194,7 @@ const MainScreen = () => {
             <Text style={[styles.title, { color: theme.colors.text }]}>Login</Text>
             <TextInput
               style={[styles.input, { backgroundColor: theme.colors.surface, color: theme.colors.text, borderColor: theme.colors.placeholder }]}
-              placeholder="Username"
+              placeholder="Username or Email"
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -124,17 +222,122 @@ const MainScreen = () => {
             <TouchableOpacity style={[styles.button, { backgroundColor: theme.colors.primary }]} onPress={handleLogin} disabled={loading}>
               <Text style={[styles.buttonText, { color: theme.colors.surface }]}>{loading ? 'Logging in...' : 'Submit'}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowSignup(true)} style={{ marginTop: 16 }}>
+            
+            <TouchableOpacity onPress={handleForgotPassword} style={{ marginTop: 16 }}>
+              <Text style={{ color: theme.colors.primary }}>Forgot Password?</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity onPress={() => setShowEmailOtp(true)} style={{ marginTop: 8 }}>
               <Text style={{ color: theme.colors.primary }}>Don't have an account? Sign up</Text>
             </TouchableOpacity>
             {signupPrompt && (
               <View style={{ marginTop: 20 }}>
                 <Text style={{ color: 'red', marginBottom: 8 }}>User does not exist. Would you like to sign up?</Text>
-                <TouchableOpacity style={[styles.button, { backgroundColor: theme.colors.primary }]} onPress={() => { setShowSignup(true); setSignupPrompt(false); }}>
+                <TouchableOpacity style={[styles.button, { backgroundColor: theme.colors.primary }]} onPress={() => { setShowEmailOtp(true); setSignupPrompt(false); }}>
                   <Text style={[styles.buttonText, { color: theme.colors.surface }]}>Sign Up</Text>
                 </TouchableOpacity>
               </View>
             )}
+            
+            {/* Forgot Password Dialog */}
+            <Portal>
+              <Dialog
+                visible={forgotPasswordVisible}
+                onDismiss={() => {
+                  setForgotPasswordVisible(false);
+                  resetForgotPasswordForm();
+                }}
+                style={{ backgroundColor: theme.colors.surface }}
+              >
+                <Dialog.Title style={{ color: theme.colors.text }}>
+                  Reset Password
+                </Dialog.Title>
+                <Dialog.Content>
+                  {currentStep === 'email' && (
+                    <View>
+                      <Text style={{ color: theme.colors.text, marginBottom: 16, lineHeight: 20 }}>
+                        Enter your username or email address to receive a password reset OTP
+                      </Text>
+                      <PaperTextInput
+                        label="Email/Username"
+                        value={email}
+                        onChangeText={setEmail}
+                        style={{ marginBottom: 16 }}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        theme={{ colors: { primary: theme.colors.primary } }}
+                      />
+                    </View>
+                  )}
+
+                  {currentStep === 'otp' && (
+                    <View>
+                      <Text style={{ color: theme.colors.text, marginBottom: 16, lineHeight: 20 }}>
+                        Enter the OTP sent to your email or associated with your username: {email}
+                      </Text>
+                      <PaperTextInput
+                        label="OTP"
+                        value={otp}
+                        onChangeText={setOtp}
+                        style={{ marginBottom: 16 }}
+                        keyboardType="numeric"
+                        maxLength={6}
+                        theme={{ colors: { primary: theme.colors.primary } }}
+                      />
+                    </View>
+                  )}
+
+                  {currentStep === 'password' && (
+                    <View>
+                      <Text style={{ color: theme.colors.text, marginBottom: 16, lineHeight: 20 }}>
+                        Enter your new password
+                      </Text>
+                      <PaperTextInput
+                        label="New Password"
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        style={{ marginBottom: 16 }}
+                        secureTextEntry
+                        theme={{ colors: { primary: theme.colors.primary } }}
+                      />
+                      <PaperTextInput
+                        label="Confirm Password"
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        style={{ marginBottom: 16 }}
+                        secureTextEntry
+                        theme={{ colors: { primary: theme.colors.primary } }}
+                      />
+                    </View>
+                  )}
+                </Dialog.Content>
+                <Dialog.Actions>
+                  <Button 
+                    onPress={() => {
+                      setForgotPasswordVisible(false);
+                      resetForgotPasswordForm();
+                    }} 
+                    textColor={theme.colors.primary}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onPress={
+                      currentStep === 'email' ? handleSendOtp :
+                      currentStep === 'otp' ? handleVerifyOtp :
+                      handleResetPassword
+                    }
+                    loading={forgotPasswordLoading}
+                    disabled={forgotPasswordLoading}
+                    textColor={theme.colors.primary}
+                  >
+                    {currentStep === 'email' ? 'Send OTP' :
+                     currentStep === 'otp' ? 'Verify OTP' :
+                     'Reset Password'}
+                  </Button>
+                </Dialog.Actions>
+              </Dialog>
+            </Portal>
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -164,7 +367,26 @@ const MainScreen = () => {
       {isAuthenticated ? (
         <AppNavigator />
       ) : showSignup ? (
-        <SignupScreen onSignupSuccess={() => setShowSignup(false)} />
+        <SignupScreen 
+          onSignupSuccess={() => {
+            setShowSignup(false);
+            setVerifiedEmail('');
+            setEmailToken('');
+          }}
+          onBackToLogin={() => setShowSignup(false)}
+          verifiedEmail={verifiedEmail}
+          emailToken={emailToken}
+        />
+      ) : showEmailOtp ? (
+        <EmailOtpScreen 
+          onOtpVerified={(email, token) => {
+            setVerifiedEmail(email);
+            setEmailToken(token);
+            setShowEmailOtp(false);
+            setShowSignup(true);
+          }}
+          onBackToLogin={() => setShowEmailOtp(false)}
+        />
       ) : (
         <LoginWithSignupPrompt />
       )}

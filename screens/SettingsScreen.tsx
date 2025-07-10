@@ -1,358 +1,299 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Button, Card, Divider, Switch, Dialog, Portal, TextInput as PaperTextInput, useTheme as usePaperTheme } from 'react-native-paper';
+import { Divider, Switch, Dialog, Portal, TextInput as PaperTextInput, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
+import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 import Header from '../components/Header';
-import CategoryIcon from '../components/CategoryIcon';
-import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, Category } from '../hooks/useCategories';
 import { RootStackParamList } from '../App';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-// Color options for categories
-const colorOptions = [
-  '#F44336', // Red
-  '#E91E63', // Pink
-  '#9C27B0', // Purple
-  '#673AB7', // Deep Purple
-  '#3F51B5', // Indigo
-  '#2196F3', // Blue
-  '#03A9F4', // Light Blue
-  '#00BCD4', // Cyan
-  '#009688', // Teal
-  '#4CAF50', // Green
-  '#8BC34A', // Light Green
-  '#CDDC39', // Lime
-  '#FFEB3B', // Yellow
-  '#FFC107', // Amber
-  '#FF9800', // Orange
-  '#FF5722', // Deep Orange
-  '#795548', // Brown
-  '#607D8B', // Blue Grey
-];
-
-// Icon options for categories
-const iconOptions = [
-  { name: 'home', label: 'Home' },
-  { name: 'shopping-bag', label: 'Shopping' },
-  { name: 'utensils', label: 'Food' },
-  { name: 'credit-card', label: 'Bills' },
-  { name: 'film', label: 'Entertainment' },
-  { name: 'map', label: 'Transport' },
-  { name: 'book', label: 'Education' },
-  { name: 'briefcase', label: 'Work' },
-  { name: 'activity', label: 'Health' },
-  { name: 'gift', label: 'Gifts' },
-  { name: 'banknote', label: 'Income' },
-  { name: 'trending-up', label: 'Investments' },
-  { name: 'shower', label: 'Body Care' },
-  { name: 'car', label: 'Cab' },
-  { name: 'tshirt-crew', label: 'Clothes' },
-  { name: 'cellphone', label: 'Communications' },
-  { name: 'hand-heart', label: 'Donation' },
-  { name: 'silverware-fork-knife', label: 'Eating Out' },
-  { name: 'food', label: 'Ordered Food' },
-  { name: 'account-group', label: 'Family' },
-  { name: 'gas-station', label: 'Fuel' },
-  { name: 'laptop', label: 'Gadgets' },
-  { name: 'heart-pulse', label: 'Health' },
-  { name: 'hotel', label: 'Hotel' },
-  { name: 'airplane', label: 'Trip' },
-  { name: 'sofa', label: 'House Decor' },
-  { name: 'dots-horizontal', label: 'Miscellaneous' },
-  { name: 'parking', label: 'Parking' },
-  { name: 'flower-tulip', label: 'Puja' },
-  { name: 'monitor', label: 'Tech' },
-  { name: 'school', label: 'Study' },
-  { name: 'flash', label: 'Utilities' },
-  { name: 'delete', label: 'Waste' },
-];
-
-interface CategoryItemProps {
-  category: Category;
-  onEdit: (category: Category) => void;
-  onDelete: (id: number) => void;
-}
-
-function CategoryItem({ category, onEdit, onDelete }: CategoryItemProps) {
-  const { theme, isDarkMode } = useTheme();
-  // Only override for light mode; keep dark mode as before
-  const cardStyle = isDarkMode
-    ? styles.categoryCard
-    : [
-        styles.categoryCard,
-        {
-          backgroundColor: '#fff',
-          borderColor: '#E0E0E0',
-          borderWidth: 1,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.1,
-          shadowRadius: 2,
-          elevation: 2,
-        },
-      ];
-  const textStyle = isDarkMode
-    ? [styles.categoryName, { color: theme.colors.text }]
-    : [styles.categoryName, { color: '#222' }];
-  return (
-    <Card style={cardStyle}>
-      <View style={styles.categoryContent}>
-        <View style={styles.categoryInfo}>
-          <CategoryIcon name={category.icon} color={category.color} size={18} />
-          <Text style={textStyle}>{category.name}</Text>
-        </View>
-        
-        <View style={styles.categoryActions}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => onEdit(category)}
-          >
-            <MaterialCommunityIcons name="pencil" size={20} color="#666" />
-          </TouchableOpacity>
-          
-          {!category.isDefault && (
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => onDelete(category.id)}
-            >
-              <MaterialCommunityIcons name="delete" size={20} color="#F44336" />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    </Card>
-  );
-}
-
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { isDarkMode, toggleTheme, theme } = useTheme(); // Use theme from context
-  const paperTheme = usePaperTheme(); // Use paper theme for component styling
-  
-  // Category data and mutations
-  const { data: categories, isLoading } = useCategories();
-  const createCategory = useCreateCategory();
-  const updateCategory = useUpdateCategory();
-  const deleteCategory = useDeleteCategory();
-  
-  // UI state
-  const [dialogVisible, setDialogVisible] = useState(false);
-  const [currentTab, setCurrentTab] = useState<'expense' | 'income'>('expense');
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  
-  // Form state
-  const [categoryName, setCategoryName] = useState('');
-  const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
-  const [selectedIcon, setSelectedIcon] = useState(iconOptions[0].name);
-  
-  // Filter categories by type
-  const expenseCategories = (categories?.filter(c => c.type === 'expense').sort((a, b) => a.name.localeCompare(b.name))) || [];
-  const incomeCategories = (categories?.filter(c => c.type === 'income').sort((a, b) => a.name.localeCompare(b.name))) || [];
-  const displayedCategories = currentTab === 'expense' ? expenseCategories : incomeCategories;
-  
-  // Open dialog for adding a new category
-  const handleAddCategory = () => {
-    setEditingCategory(null);
-    setCategoryName('');
-    setSelectedColor(colorOptions[0]);
-    setSelectedIcon(iconOptions[0].name);
-    setDialogVisible(true);
+  const { isDarkMode, toggleTheme, theme } = useTheme();
+  const { user, logout, sendOtp, verifyOtp, resetPassword } = useAuth();
+
+  // Debug log to see what user data we have
+  React.useEffect(() => {
+    console.log('SettingsScreen - Current user data:', user);
+    console.log('SettingsScreen - User name:', user?.name);
+    console.log('SettingsScreen - User email:', user?.email);
+    console.log('SettingsScreen - User username:', user?.username);
+  }, [user]);
+
+  // Change password state
+  const [changePasswordVisible, setChangePasswordVisible] = useState(false);
+  const [currentStep, setCurrentStep] = useState<'otp' | 'password'>('otp');
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [emailToken, setEmailToken] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleNavigateToCategories = () => {
+    navigation.navigate('Categories');
   };
-  
-  // Open dialog for editing an existing category
-  const handleEditCategory = (category: Category) => {
-    setEditingCategory(category);
-    setCategoryName(category.name);
-    setSelectedColor(category.color);
-    setSelectedIcon(category.icon);
-    setDialogVisible(true);
-  };
-  
-  // Delete category with confirmation
-  const handleDeleteCategory = (id: number) => {
-    Alert.alert(
-      'Delete Category',
-      'Are you sure you want to delete this category? This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        { 
-          text: 'Delete', 
-          onPress: () => {
-            deleteCategory.mutate(id);
-          },
-          style: 'destructive',
-        },
-      ],
-    );
-  };
-  
-  // Save category (create or update)
-  const handleSaveCategory = () => {
-    if (!categoryName.trim()) {
-      Alert.alert('Error', 'Category name is required');
+
+  const handleChangePassword = async () => {
+    if (!user?.email) {
+      Alert.alert('Error', 'User email not found');
       return;
     }
+
+    setCurrentStep('otp');
+    setChangePasswordVisible(true);
     
-    if (editingCategory) {
-      // Update existing category
-      updateCategory.mutate({
-        id: editingCategory.id,
-        name: categoryName,
-        color: selectedColor,
-        icon: selectedIcon,
-      });
-    } else {
-      // Create new category
-      createCategory.mutate({
-        name: categoryName,
-        type: currentTab,
-        color: selectedColor,
-        icon: selectedIcon,
-      });
+    // Automatically send OTP to user's registered email
+    setIsLoading(true);
+    try {
+      await sendOtp(user.email, 'reset_password');
+      Alert.alert('Success', `OTP sent to ${user.email}`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send OTP. Please try again.');
+      setChangePasswordVisible(false);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setDialogVisible(false);
   };
-  
+
+  const handleVerifyOtp = async () => {
+    if (!otp.trim()) {
+      Alert.alert('Error', 'Please enter the OTP');
+      return;
+    }
+
+    if (!user?.email) {
+      Alert.alert('Error', 'User email not found');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const token = await verifyOtp(user.email, otp);
+      setEmailToken(token); // Store the actual email_token returned by the API
+      setCurrentStep('password');
+      Alert.alert('Success', 'OTP verified successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Invalid OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword.trim()) {
+      Alert.alert('Error', 'Please enter a new password');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+
+    if (!user?.email) {
+      Alert.alert('Error', 'User email not found');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await resetPassword(user.email, newPassword, emailToken);
+      // Close dialog and reset form on success
+      setChangePasswordVisible(false);
+      resetChangePasswordForm();
+      Alert.alert('Success', 'Password changed successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to change password. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetChangePasswordForm = () => {
+    setCurrentStep('otp');
+    setOtp('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setEmailToken('');
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Header />
       
       <View style={styles.content}>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Profile</Text>
+          
+          <View style={styles.profileItem}>
+            <MaterialCommunityIcons 
+              name="account" 
+              size={24} 
+              color={theme.colors.text} 
+              style={styles.profileIcon}
+            />
+            <View style={styles.profileInfo}>
+              <Text style={[styles.profileLabel, { color: theme.colors.placeholder }]}>Name</Text>
+              <Text style={[styles.profileValue, { color: theme.colors.text }]}>{user?.name || 'N/A'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.profileItem}>
+            <MaterialCommunityIcons 
+              name="email" 
+              size={24} 
+              color={theme.colors.text} 
+              style={styles.profileIcon}
+            />
+            <View style={styles.profileInfo}>
+              <Text style={[styles.profileLabel, { color: theme.colors.placeholder }]}>Email</Text>
+              <Text style={[styles.profileValue, { color: theme.colors.text }]}>{user?.email || 'N/A'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.profileItem}>
+            <MaterialCommunityIcons 
+              name="account-circle" 
+              size={24} 
+              color={theme.colors.text} 
+              style={styles.profileIcon}
+            />
+            <View style={styles.profileInfo}>
+              <Text style={[styles.profileLabel, { color: theme.colors.placeholder }]}>Username</Text>
+              <Text style={[styles.profileValue, { color: theme.colors.text }]}>{user?.username || 'N/A'}</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.changePasswordButton} onPress={handleChangePassword}>
+            <MaterialCommunityIcons 
+              name="lock-reset" 
+              size={24} 
+              color={theme.colors.primary} 
+              style={styles.settingIcon}
+            />
+            <Text style={[styles.changePasswordText, { color: theme.colors.primary }]}>Change Password</Text>
+            <MaterialCommunityIcons 
+              name="chevron-right" 
+              size={24} 
+              color={theme.colors.placeholder} 
+            />
+          </TouchableOpacity>
+        </View>
+
+        <Divider style={{ backgroundColor: theme.colors.placeholder, marginVertical: 16 }} />
+
         {/* Dark Mode Toggle */}
         <View style={styles.settingItem}>
           <Text style={[styles.settingText, { color: theme.colors.text }]}>Dark Mode</Text>
           <Switch value={isDarkMode} onValueChange={toggleTheme} color={theme.colors.primary} />
         </View>
+        
         <Divider style={{ backgroundColor: theme.colors.placeholder, marginVertical: 16 }} />
 
-        <View style={styles.titleContainer}>
-          <Text style={[styles.title, { color: theme.colors.text }]}>Categories</Text>
-          <TouchableOpacity 
-            style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
-            onPress={handleAddCategory}
-          >
-            <MaterialCommunityIcons name="plus" size={20} color={theme.colors.surface} />
-            <Text style={[styles.addButtonText, { color: theme.colors.surface }]}>Add Category</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <View style={[styles.tabContainer, { borderBottomColor: theme.colors.placeholder }]}>
-          <TouchableOpacity
-            style={[styles.tab, currentTab === 'expense' && styles.activeTab, currentTab === 'expense' && { borderBottomColor: theme.colors.primary }]}
-            onPress={() => setCurrentTab('expense')}
-          >
-            <Text style={[styles.tabText, {color: theme.colors.text }, currentTab === 'expense' && styles.activeTabText, currentTab === 'expense' && { color: theme.colors.primary }]}>
-              Expense
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.tab, currentTab === 'income' && styles.activeTab, currentTab === 'income' && { borderBottomColor: theme.colors.primary}]}
-            onPress={() => setCurrentTab('income')}
-          >
-            <Text style={[styles.tabText, {color: theme.colors.text }, currentTab === 'income' && styles.activeTabText, currentTab === 'income' && { color: theme.colors.primary }]}>
-              Income
-            </Text>
-          </TouchableOpacity>
-        </View>
-        
-        <FlatList
-          data={displayedCategories}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <CategoryItem 
-              category={item} 
-              onEdit={handleEditCategory} 
-              onDelete={handleDeleteCategory}
+        {/* Categories Navigation */}
+        <TouchableOpacity style={styles.settingItem} onPress={handleNavigateToCategories}>
+          <View style={styles.settingItemContent}>
+            <MaterialCommunityIcons 
+              name="shape" 
+              size={24} 
+              color={theme.colors.text} 
+              style={styles.settingIcon}
             />
-          )}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: theme.colors.placeholder }]}>
-                No {currentTab} categories found. Add one to get started!
-              </Text>
-            </View>
-          )}
-          contentContainerStyle={styles.listContent}
-        />
+            <Text style={[styles.settingText, { color: theme.colors.text }]}>Categories</Text>
+          </View>
+          <MaterialCommunityIcons 
+            name="chevron-right" 
+            size={24} 
+            color={theme.colors.placeholder} 
+          />
+        </TouchableOpacity>
       </View>
-      
-      {/* Add/Edit Category Dialog */}
+
+      {/* Change Password Dialog */}
       <Portal>
         <Dialog
-            visible={dialogVisible}
-            onDismiss={() => setDialogVisible(false)}
-            style={{ maxHeight: '90%', backgroundColor: theme.colors.surface }}
+          visible={changePasswordVisible}
+          onDismiss={() => {
+            setChangePasswordVisible(false);
+            resetChangePasswordForm();
+          }}
+          style={{ backgroundColor: theme.colors.surface }}
         >
           <Dialog.Title style={{ color: theme.colors.text }}>
-            {editingCategory ? 'Edit Category' : 'Add Category'}
+            Change Password
           </Dialog.Title>
-          <View style={{ maxHeight: 400 }}>
-            <FlatList
-              data={[1]}
-              renderItem={() => (
-                <Dialog.Content>
-                  <PaperTextInput
-                    label="Category Name"
-                    value={categoryName}
-                    onChangeText={setCategoryName}
-                    style={[styles.input, { backgroundColor: theme.colors.background }]}
-                    theme={{ colors: { primary: theme.colors.primary, text: theme.colors.text, placeholder: theme.colors.placeholder, background: theme.colors.background } }}
-                  />
-                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Color</Text>
-                  <View style={styles.colorGrid}>
-                    {colorOptions.map((color) => (
-                      <TouchableOpacity
-                        key={color}
-                        style={[
-                          styles.colorOption,
-                          { backgroundColor: color },
-                          selectedColor === color && styles.selectedColorOption,
-                          selectedColor === color && { borderColor: theme.colors.primary },
-                        ]}
-                        onPress={() => setSelectedColor(color)}
-                      />
-                    ))}
-                  </View>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Icon</Text>
-                  <View style={styles.iconGrid}>
-                    {iconOptions.map((icon) => (
-                      <TouchableOpacity
-                        key={icon.name}
-                        style={[
-                          styles.iconOption,
-                          selectedIcon === icon.name && styles.selectedIconOption,
-                          selectedIcon === icon.name && { borderColor: theme.colors.primary },
-                        ]}
-                        onPress={() => setSelectedIcon(icon.name)}
-                      >
-                        <CategoryIcon 
-                          name={icon.name} 
-                          color={selectedIcon === icon.name ? selectedColor : theme.colors.placeholder}
-                          size={16}
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </Dialog.Content>
-              )}
-              keyExtractor={() => 'dialog-content'}
-              showsVerticalScrollIndicator={false}
-            />
-          </View>
+          <Dialog.Content>
+            {currentStep === 'otp' && (
+              <View>
+                <Text style={[styles.dialogText, { color: theme.colors.text }]}>
+                  Enter the OTP sent to your registered email: {user?.email}
+                </Text>
+                <PaperTextInput
+                  label="OTP"
+                  value={otp}
+                  onChangeText={setOtp}
+                  style={styles.input}
+                  keyboardType="numeric"
+                  maxLength={6}
+                  theme={{ colors: { primary: theme.colors.primary } }}
+                />
+              </View>
+            )}
+
+            {currentStep === 'password' && (
+              <View>
+                <Text style={[styles.dialogText, { color: theme.colors.text }]}>
+                  Enter your new password
+                </Text>
+                <PaperTextInput
+                  label="New Password"
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  style={styles.input}
+                  secureTextEntry
+                  theme={{ colors: { primary: theme.colors.primary } }}
+                />
+                <PaperTextInput
+                  label="Confirm Password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  style={styles.input}
+                  secureTextEntry
+                  theme={{ colors: { primary: theme.colors.primary } }}
+                />
+              </View>
+            )}
+          </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setDialogVisible(false)} color={theme.colors.primary}>Cancel</Button>
-            <Button onPress={handleSaveCategory} color={theme.colors.primary}>Save</Button>
+            <Button 
+              onPress={() => {
+                setChangePasswordVisible(false);
+                resetChangePasswordForm();
+              }} 
+              textColor={theme.colors.primary}
+            >
+              Cancel
+            </Button>
+            <Button
+              onPress={currentStep === 'otp' ? handleVerifyOtp : handleResetPassword}
+              loading={isLoading}
+              disabled={isLoading}
+              textColor={theme.colors.primary}
+            >
+              {currentStep === 'otp' ? 'Verify OTP' : 'Change Password'}
+            </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -361,147 +302,75 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { // Base container style, background color will be overridden by theme
+  container: {
     flex: 1,
   },
   content: {
     flex: 1,
     padding: 16,
   },
-  titleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: { // Text color will be overridden by theme
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  addButton: { // Background and text color will be overridden by theme
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  addButtonText: { // Text color will be overridden by theme
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  tabContainer: { // Border color will be overridden by theme
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    marginBottom: 16,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  activeTab: { // Border color will be overridden by theme
-    borderBottomWidth: 2,
-  },
-  tabText: { // Text color will be overridden by theme
-    fontWeight: '500',
-  },
-  activeTabText: { // Text color will be overridden by theme
-    fontWeight: 'bold',
-  },
-  categoryCard: { // Background color will be overridden by theme
-    borderRadius: 8,
-    elevation: 1,
-    marginBottom: 12,
-  },
-  categoryContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-  },
-  categoryInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  categoryName: { // Text color will be overridden by theme
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  categoryActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionButton: {
-    padding: 8,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: { // Text color will be overridden by theme
-    fontSize: 16,
-  },
-  listContent: {
-    paddingBottom: 16,
-  },
-  input: { // Background color will be overridden by theme in PaperTextInput
-    marginBottom: 16,
-  },
-  sectionTitle: { // Text color will be overridden by theme
-    fontSize: 14,
-    fontWeight: 'bold',
+  profileSection: {
     marginBottom: 8,
   },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
     marginBottom: 16,
   },
-  colorOption: { // Border color will be overridden by theme
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginBottom: 10,
-    borderWidth: 2,
-    // borderColor: '#fff', // Keep or remove based on theme design for unselected
-    // backgroundColor: '#eee', // Keep or remove based on theme design for unselected
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selectedColorOption: { // Border and shadow color will be overridden by theme
-    borderWidth: 3,
-    // backgroundColor: '#fff', // Keep or remove based on theme design for selected
-    // shadowColor: '#007bff', // Keep or remove based on theme design for selected
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  iconGrid: {
+  profileItem: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  iconOption: {
-    width: '22%',
-    aspectRatio: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: 12,
   },
-  selectedIconOption: { // Border color will be overridden by theme
-    borderWidth: 2,
+  profileIcon: {
+    marginRight: 12,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  profileValue: {
+    fontSize: 16,
+    fontWeight: '400',
+  },
+  changePasswordButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginTop: 8,
+  },
+  changePasswordText: {
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+    marginLeft: 12,
   },
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 16,
   },
-  settingText: { // Text color will be overridden by theme
+  settingItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingIcon: {
+    marginRight: 12,
+  },
+  settingText: {
     fontSize: 16,
-  }
+  },
+  input: {
+    marginBottom: 16,
+  },
+  dialogText: {
+    fontSize: 14,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
 });
