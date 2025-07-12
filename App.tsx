@@ -23,10 +23,12 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext'; // Import The
 import { PaperProvider } from 'react-native-paper'; // Import PaperProvider
 import { SyncProvider } from './contexts/SyncContext';
 import { SyncManager } from './contexts/SyncManager';
+import { GoogleOAuthModal } from './components/GoogleOAuthModal';
 
 // API Client
 import { queryClient } from './lib/apiClient';
 import { navigationRef } from './lib/RootNavigation';
+import { linking } from './lib/linking';
 import NotificationModule from './lib/NativeNotificationListener';
 import { ensureNotificationListenerPermission } from './lib/NativeNotificationListener';
 
@@ -74,6 +76,7 @@ const MainScreen = () => {
     const [password, setPassword] = React.useState('');
     const [loading, setLoading] = React.useState(false);
     const [showPassword, setShowPassword] = React.useState(false);
+    const [showGoogleModal, setShowGoogleModal] = React.useState(false);
     
     // Forgot password state
     const [forgotPasswordVisible, setForgotPasswordVisible] = React.useState(false);
@@ -102,6 +105,10 @@ const MainScreen = () => {
       } finally {
         setLoading(false);
       }
+    };
+
+    const handleGoogleLogin = async () => {
+      setShowGoogleModal(true);
     };
 
     const handleForgotPassword = () => {
@@ -223,6 +230,25 @@ const MainScreen = () => {
               <Text style={[styles.buttonText, { color: theme.colors.surface }]}>{loading ? 'Logging in...' : 'Submit'}</Text>
             </TouchableOpacity>
             
+            {/* Divider */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 20, width: '100%' }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.placeholder }} />
+              <Text style={{ marginHorizontal: 10, color: theme.colors.placeholder }}>OR</Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.placeholder }} />
+            </View>
+            
+            {/* Google Login Button */}
+            <TouchableOpacity 
+              style={[styles.googleButton, { borderColor: theme.colors.placeholder }]} 
+              onPress={handleGoogleLogin} 
+              disabled={loading}
+            >
+              <MaterialCommunityIcons name="google" size={24} color="#4285F4" style={{ marginRight: 10 }} />
+              <Text style={[styles.googleButtonText, { color: theme.colors.text }]}>
+                {loading ? 'Signing in...' : 'Continue with Google'}
+              </Text>
+            </TouchableOpacity>
+            
             <TouchableOpacity onPress={handleForgotPassword} style={{ marginTop: 16 }}>
               <Text style={{ color: theme.colors.primary }}>Forgot Password?</Text>
             </TouchableOpacity>
@@ -338,6 +364,16 @@ const MainScreen = () => {
                 </Dialog.Actions>
               </Dialog>
             </Portal>
+            
+            <GoogleOAuthModal
+              visible={showGoogleModal}
+              onClose={() => setShowGoogleModal(false)}
+              onSuccess={() => {
+                setShowGoogleModal(false);
+                // Auth state will be handled by AuthContext
+              }}
+              theme={theme}
+            />
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -353,17 +389,21 @@ const MainScreen = () => {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} theme={{
-      dark: theme.dark,
-      colors: {
-        background: theme.colors.background,
-        primary: '',
-        card: '',
-        text: '',
-        border: '',
-        notification: ''
-      }
-    }}>
+    <NavigationContainer 
+      ref={navigationRef} 
+      linking={linking}
+      theme={{
+        dark: theme.dark,
+        colors: {
+          background: theme.colors.background,
+          primary: '',
+          card: '',
+          text: '',
+          border: '',
+          notification: ''
+        }
+      }}
+    >
       {isAuthenticated ? (
         <AppNavigator />
       ) : showSignup ? (
@@ -478,5 +518,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  googleButton: {
+    width: '100%',
+    height: 50,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

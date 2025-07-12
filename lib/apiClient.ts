@@ -1,8 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'https://mithilafoods1.com';
-// const API_BASE_URL = 'http://localhost:3000'; // Uncomment for local development
+// const API_BASE_URL = 'http://192.168.29.53:3000'; // Use your computer's IP for local development
+const API_BASE_URL = 'https://mithilafoods1.com'; // Production API
 
 const AI_BASE_URL = 'https://frugify.in'; // Base URL for AI-related endpoints
 // const AI_BASE_URL = 'http://localhost:8000'; // Uncomment for local development
