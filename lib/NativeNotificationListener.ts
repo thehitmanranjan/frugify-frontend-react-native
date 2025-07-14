@@ -37,15 +37,33 @@ const NotificationModule: NotificationModuleType = NativeModules.NotificationMod
  */
 export async function syncTransactionalMessages() {
   try {
+    console.log('🔄 Starting sync of transactional messages...');
     const messages = await NotificationModule.getTransactionalMessages();
-    if (!messages || messages.length === 0) return;
+    
+    if (!messages || messages.length === 0) {
+      console.log('📭 No transactional messages to sync');
+      return;
+    }
+    
+    console.log(`📱 Found ${messages.length} transactional message(s) to sync:`);
+    messages.forEach((msg, index) => {
+      const date = new Date(msg.timestamp);
+      console.log(`📝 Message ${index + 1}:`);
+      console.log(`   📤 Sender: ${msg.sender}`);
+      console.log(`   💬 Message: ${msg.message}`);
+      console.log(`   🕐 Timestamp: ${date.toLocaleString()}`);
+      console.log(`   ⏱️  Raw timestamp: ${msg.timestamp}`);
+    });
+    
     for (const msg of messages) {
       try {
+        console.log(`🤖 Processing message from ${msg.sender}...`);
         // Process each message via AI endpoint with source: 'message'
         await apiRequest<any>('POST', '/ai/createTransaction', { text: msg.message, source: 'message' }, undefined, true);
+        console.log(`✅ Successfully processed message from ${msg.sender}`);
       } catch (err) {
         // Log and skip failed messages, do not clear
-        console.error('Failed to process transactional message:', err);
+        console.error('❌ Failed to process transactional message:', err);
         // onError logic
         if (err instanceof Error) {
           console.error('Error creating transaction from message:', err.message);
@@ -54,17 +72,22 @@ export async function syncTransactionalMessages() {
       }
     }
     // If all processed, clear messages
+    console.log('🧹 All messages processed successfully, clearing message queue...');
     await NotificationModule.clearTransactionalMessages();
+    console.log('✨ Message queue cleared');
+    
     // onSuccess logic (invalidate queries)
     if (typeof queryClient !== 'undefined') {
+      console.log('🔄 Invalidating transaction queries...');
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({
         queryKey: ['/api/transactions/summary'],
         exact: false
       });
+      console.log('✅ Queries invalidated, UI will refresh with new data');
     }
   } catch (err) {
-    console.error('Error syncing transactional messages:', err);
+    console.error('💥 Error syncing transactional messages:', err);
     // onError logic
     if (err instanceof Error) {
       console.error('Error creating transaction from message:', err.message);
@@ -113,6 +136,37 @@ export async function ensureNotificationListenerPermission() {
   } catch (err) {
     // fallback: just try to request
     NotificationModule.requestNotificationListenerPermission();
+  }
+}
+
+/**
+ * Debug function to check stored transactional messages without processing them
+ */
+export async function debugCheckStoredMessages() {
+  try {
+    console.log('🔍 Checking stored transactional messages...');
+    const messages = await NotificationModule.getTransactionalMessages();
+    
+    if (!messages || messages.length === 0) {
+      console.log('📭 No messages currently stored');
+      return [];
+    }
+    
+    console.log(`📱 Found ${messages.length} stored message(s):`);
+    messages.forEach((msg, index) => {
+      const date = new Date(msg.timestamp);
+      console.log(`📝 Message ${index + 1}:`);
+      console.log(`   📤 Sender: ${msg.sender}`);
+      console.log(`   💬 Message: ${msg.message}`);
+      console.log(`   🕐 Timestamp: ${date.toLocaleString()}`);
+      console.log(`   ⏱️  Raw timestamp: ${msg.timestamp}`);
+      console.log('   ---');
+    });
+    
+    return messages;
+  } catch (err) {
+    console.error('❌ Error checking stored messages:', err);
+    return [];
   }
 }
 

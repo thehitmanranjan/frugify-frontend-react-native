@@ -10,6 +10,7 @@ export const SyncManager: React.FC = () => {
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('📱 App became active, triggering sync...');
         await ensureNotificationListenerPermission();
         triggerSync();
       }
@@ -18,6 +19,7 @@ export const SyncManager: React.FC = () => {
 
     // Initial call on mount
     (async () => {
+      console.log('🎯 SyncManager initialized, performing initial sync...');
       await ensureNotificationListenerPermission();
       triggerSync();
     })();

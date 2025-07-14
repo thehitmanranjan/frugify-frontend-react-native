@@ -11,6 +11,7 @@ import TimeRangeSelector from '../components/TimeRangeSelector';
 import BudgetSummary from '../components/BudgetSummary';
 import AddTransactionSheet from '../components/AddTransactionSheet';
 import SpeechToTextSheet from '../components/SpeechToTextSheet';
+import { DebugSync } from '../components/DebugSync';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSummary } from '../hooks/useTransactions';
 import { useDate } from '../contexts/DateContext';
@@ -61,6 +62,7 @@ export default function HomeScreen() {
       <DateSelector />
       <TimeRangeSelector />
       <BudgetSummary />
+      <DebugSync />
       <Text style={[styles.heading, { color: theme.colors.text }]}>Transactions</Text>
     </>
   );
