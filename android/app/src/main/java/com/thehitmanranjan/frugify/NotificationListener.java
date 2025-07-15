@@ -70,6 +70,8 @@ public class NotificationListener extends NotificationListenerService {
             return;
         }
 
+        Log.d(TAG, "🔔 Notification received: " + notification.toString());
+
         Bundle extras = notification.extras;
         if (extras == null) {
             Log.w(TAG, "⚠️ Notification extras bundle is null, skipping");
