@@ -39,7 +39,12 @@ export async function syncTransactionalMessages() {
   try {
     const messages = await NotificationModule.getTransactionalMessages();
     if (!messages || messages.length === 0) return;
+    let sensitiveHiddenFound = false;
     for (const msg of messages) {
+      if (msg.message === 'sensitive notification content hidden') {
+        sensitiveHiddenFound = true;
+        continue; // Skip processing this message
+      }
       try {
         // Process each message via AI endpoint with source: 'message'
         await apiRequest<any>('POST', '/ai/createTransaction', { text: msg.message, source: 'message' }, undefined, true);
@@ -52,6 +57,12 @@ export async function syncTransactionalMessages() {
         }
         return;
       }
+    }
+    if (sensitiveHiddenFound) {
+      Alert.alert(
+        'Enable Enhanced Notifications',
+        'Please toggle "enhanced notifications" or enable sensitive notification content in your app or mobile settings to allow Frugify to read transaction details.'
+      );
     }
     // If all processed, clear messages
     await NotificationModule.clearTransactionalMessages();
