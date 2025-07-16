@@ -22,6 +22,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'; // Import ThemeProvider and useTheme
 import { PaperProvider } from 'react-native-paper'; // Import PaperProvider
 import { SyncProvider } from './contexts/SyncContext';
+import { SearchProvider } from './contexts/SearchContext';
 import { SyncManager } from './contexts/SyncManager';
 import { GoogleOAuthModal } from './components/GoogleOAuthModal';
 
@@ -462,10 +463,12 @@ export default function App() {
         <ThemeProvider>
           <PaperProvider>
             <DateProvider>
-              <SyncProvider>
-                <SyncManager />
-                <MainScreen />
-              </SyncProvider>
+              <SearchProvider>
+                <SyncProvider>
+                  <SyncManager />
+                  <MainScreen />
+                </SyncProvider>
+              </SearchProvider>
             </DateProvider>
           </PaperProvider>
         </ThemeProvider>

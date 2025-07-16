@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Platform, FlatList, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import SpeechToTextSheet from '../components/SpeechToTextSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSummary } from '../hooks/useTransactions';
 import { useDate } from '../contexts/DateContext';
+import { useSearch } from '../contexts/SearchContext';
 import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
 import { getQueryTimeFormat } from '../lib/date-utils';
 import { formatTransactionDate } from '../lib/date-utils';
@@ -26,6 +27,7 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme, isDarkMode } = useTheme(); // Get isDarkMode from context
+  const { searchTarget, clearSearchTarget } = useSearch();
 
   const [addTransactionVisible, setAddTransactionVisible] = useState(false);
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
@@ -54,6 +56,26 @@ export default function HomeScreen() {
     startDateStr,
     endDateStr
   );
+
+  // Handle search target from Header search
+  useEffect(() => {
+    if (searchTarget && summary && summary.transactions) {
+      const categoryIdStr = searchTarget.categoryId.toString();
+      
+      // Expand the category containing the searched transaction
+      setExpandedCategories(prev => {
+        if (!prev.includes(categoryIdStr)) {
+          return [...prev, categoryIdStr];
+        }
+        return prev;
+      });
+      
+      // Clear the search target after handling it
+      setTimeout(() => {
+        clearSearchTarget();
+      }, 500);
+    }
+  }, [searchTarget, summary, clearSearchTarget]);
 
   // Header for FlatList
   const renderListHeader = () => (
@@ -127,29 +149,47 @@ export default function HomeScreen() {
         </TouchableOpacity>
         {isExpanded && (
           <View style={{ marginLeft: 24, marginTop: 4, marginBottom: 8 }}>
-            {item.transactions.map((tx) => (
-              <TouchableOpacity
-                key={tx.id}
-                style={[styles.transactionCard, { backgroundColor: cardBackgroundColor, marginHorizontal: 0, marginBottom: 8, padding: 10 }]}
-                onPress={() => showEditTransaction(tx)}
-              >
-                <View style={styles.transactionDetails}>
-                  <View style={styles.transactionHeader}>
-                    <Text style={[styles.description, { color: theme.colors.text }]}>{tx.description || tx.category.name}</Text>
-                    <Text style={[
-                      styles.amount,
-                      tx.category.type === 'income' ? styles.incomeText : styles.expenseText,
-                      { color: tx.category.type === 'income' ? '#4CAF50' : '#F44336', fontSize: 15 }
-                    ]}>
-                      {formatTransactionAmount(tx.amount, tx.category.type)}
-                    </Text>
+            {item.transactions.map((tx) => {
+              const isSearchedTransaction = searchTarget && searchTarget.transactionId === tx.id;
+              return (
+                <TouchableOpacity
+                  key={tx.id}
+                  style={[
+                    styles.transactionCard, 
+                    { 
+                      backgroundColor: isSearchedTransaction 
+                        ? (isDarkMode ? '#2a4a2a' : '#e8f5e8') 
+                        : cardBackgroundColor, 
+                      marginHorizontal: 0, 
+                      marginBottom: 8, 
+                      padding: 10,
+                      borderWidth: isSearchedTransaction ? 2 : 0,
+                      borderColor: isSearchedTransaction ? '#4CAF50' : 'transparent',
+                    }
+                  ]}
+                  onPress={() => showEditTransaction(tx)}
+                >
+                  <View style={styles.transactionDetails}>
+                    <View style={styles.transactionHeader}>
+                      <Text style={[styles.description, { color: theme.colors.text }]}>{tx.description || tx.category.name}</Text>
+                      <Text style={[
+                        styles.amount,
+                        tx.category.type === 'income' ? styles.incomeText : styles.expenseText,
+                        { color: tx.category.type === 'income' ? '#4CAF50' : '#F44336', fontSize: 15 }
+                      ]}>
+                        {formatTransactionAmount(tx.amount, tx.category.type)}
+                      </Text>
+                    </View>
+                    <View style={styles.transactionFooter}>
+                      <Text style={[styles.date, { color: theme.colors.placeholder }]}>{formatTransactionDate(tx.date)}</Text>
+                      {isSearchedTransaction && (
+                        <Text style={[styles.searchHighlight, { color: '#4CAF50' }]}>• Found</Text>
+                      )}
+                    </View>
                   </View>
-                  <View style={styles.transactionFooter}>
-                    <Text style={[styles.date, { color: theme.colors.placeholder }]}>{formatTransactionDate(tx.date)}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
       </View>
@@ -393,6 +433,11 @@ const styles = StyleSheet.create({
   date: { // Text color will be overridden by theme
     fontSize: 14,
     // color: '#999', // Theme controlled
+  },
+  searchHighlight: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   loadingContainer: { // Background color will be overridden by theme
     flex: 1,
