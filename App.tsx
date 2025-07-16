@@ -8,6 +8,38 @@ import { StyleSheet, View, ActivityIndicator, Text, TextInput, TouchableOpacity,
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Dialog, Portal, TextInput as PaperTextInput, Button } from 'react-native-paper';
 
+// Error Boundary for crash handling
+class ErrorBoundary extends React.Component {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.log('Error caught by boundary:', error, errorInfo);
+    // In production, you might want to log this to a crash reporting service
+    this.setState({ errorInfo });
+  }
+
+  render() {
+    if ((this.state as any).hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ fontSize: 18, marginBottom: 10 }}>Something went wrong</Text>
+          <Text style={{ textAlign: 'center', color: '#666' }}>
+            {(this.state as any).errorInfo ? JSON.stringify((this.state as any).errorInfo) : 'Unknown error'}
+          </Text>
+        </View>
+      );
+    }
+    return (this.props as any).children;
+  }
+}
+
 // Screens
 import HomeScreen from './screens/HomeScreen';
 import BudgetScreen from './screens/BudgetScreen';
@@ -392,7 +424,8 @@ const MainScreen = () => {
   return (
     <NavigationContainer 
       ref={navigationRef} 
-      linking={linking}
+      // Temporarily disable linking to prevent standalone app crashes
+      // linking={linking}
       theme={{
         dark: theme.dark,
         colors: {
@@ -458,22 +491,24 @@ export default function App() {
     };
   }, []);
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
-          <PaperProvider>
-            <DateProvider>
-              <SearchProvider>
-                <SyncProvider>
-                  <SyncManager />
-                  <MainScreen />
-                </SyncProvider>
-              </SearchProvider>
-            </DateProvider>
-          </PaperProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ThemeProvider>
+            <PaperProvider>
+              <DateProvider>
+                <SearchProvider>
+                  <SyncProvider>
+                    <SyncManager />
+                    <MainScreen />
+                  </SyncProvider>
+                </SearchProvider>
+              </DateProvider>
+            </PaperProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

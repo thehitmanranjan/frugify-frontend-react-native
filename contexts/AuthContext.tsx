@@ -264,6 +264,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       if (url) {
         handleUrl(url);
       }
+    }).catch((error) => {
+      console.warn('Error getting initial URL in AuthContext:', error);
     });
 
     checkAuthStatus();

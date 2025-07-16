@@ -1,7 +1,8 @@
 import { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 
-const prefix = Linking.createURL('/');
+// Use the custom scheme instead of createURL for standalone apps
+const prefix = 'com.thehitmanranjan.frugify://';
 
 const config = {
   screens: {
@@ -13,12 +14,17 @@ const config = {
 };
 
 export const linking: LinkingOptions<any> = {
-  prefixes: [prefix, 'com.thehitmanranjan.frugify://'],
+  prefixes: [prefix],
   config,
   async getInitialURL() {
     // Get the initial URL from expo-linking
-    const url = await Linking.getInitialURL();
-    return url;
+    try {
+      const url = await Linking.getInitialURL();
+      return url;
+    } catch (error) {
+      console.warn('Error getting initial URL:', error);
+      return null;
+    }
   },
   subscribe(listener) {
     const onReceiveURL = ({ url }: { url: string }) => {
@@ -26,11 +32,16 @@ export const linking: LinkingOptions<any> = {
       return listener(url);
     };
 
-    // Listen for incoming links
-    const subscription = Linking.addEventListener('url', onReceiveURL);
+    try {
+      // Listen for incoming links
+      const subscription = Linking.addEventListener('url', onReceiveURL);
 
-    return () => {
-      subscription?.remove();
-    };
+      return () => {
+        subscription?.remove();
+      };
+    } catch (error) {
+      console.warn('Error subscribing to URL events:', error);
+      return () => {};
+    }
   },
 };
