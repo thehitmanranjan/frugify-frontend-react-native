@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { StackNavigationProp } from '@react-navigation/stack';
 import InsightsSheet from './InsightsSheet';
+import AISparkleIcon from './AISparkleIcon';
 import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
 import { useSync } from '../contexts/SyncContext';
 import { useDate } from '../contexts/DateContext';
@@ -278,7 +279,7 @@ export default function Header({ showBackButton = false, title, onBackPress }: H
                 style={styles.iconButton}
                 onPress={() => setInsightsVisible(true)}
               >
-                <MaterialCommunityIcons name="information-outline" size={24} color={theme.colors.text} />
+                <AISparkleIcon size={24} color={theme.colors.text} />
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.iconButton}

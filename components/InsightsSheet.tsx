@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, ScrollView, TextInput, KeyboardAvoidingView, Platform, FlatList, Animated } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useInsightsQuery } from '../hooks/useInsightsQuery';
 import { useTheme } from '../contexts/ThemeContext';
 import SpeechToTextMic from './SpeechToTextMic';
+import AISparkleIcon from './AISparkleIcon';
 
 interface InsightsSheetProps {
   isVisible: boolean;
@@ -73,11 +74,11 @@ export default function InsightsSheet({ isVisible, onClose }: InsightsSheetProps
         item.role === 'user' ? { flexDirection: 'row-reverse' } : { flexDirection: 'row' },
       ]}
     >
-      <View style={styles.avatarCircle}>
+      <View style={[styles.avatarCircle, { backgroundColor: item.role === 'user' ? theme.colors.primary : (isDarkMode ? '#2a2a2a' : '#f0f0f0') }]}>
         {item.role === 'user' ? (
           <Text style={styles.avatarText}>AK</Text>
         ) : (
-          <Text style={styles.avatarText}>🤖</Text>
+          <AISparkleIcon size={20} color={theme.colors.primary} />
         )}
       </View>
       <View
@@ -164,7 +165,7 @@ export default function InsightsSheet({ isVisible, onClose }: InsightsSheetProps
                   isTyping && props.index === messages.length
                     ? (
                       <View style={[styles.messageRow, { flexDirection: 'row' }]}> 
-                        <View style={styles.avatarCircle}><Text style={styles.avatarText}>🤖</Text></View>
+                        <View style={[styles.avatarCircle, { backgroundColor: isDarkMode ? '#2a2a2a' : '#f0f0f0' }]}><AISparkleIcon size={20} color={theme.colors.primary} /></View>
                         <View style={[styles.messageContainer, { alignSelf: 'flex-start' }]}> 
                           <View style={[styles.bubble, { backgroundColor: isDarkMode ? '#23272e' : '#e0e0e0', borderTopLeftRadius: 0 }]}> 
                             <TypingAnimation />
@@ -307,7 +308,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#bdbdbd',
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 6,
