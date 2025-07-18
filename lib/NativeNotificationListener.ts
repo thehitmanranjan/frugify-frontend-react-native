@@ -60,8 +60,26 @@ export async function syncTransactionalMessages() {
     }
     if (sensitiveHiddenFound) {
       Alert.alert(
-        'Enable Enhanced Notifications',
-        'Please toggle "enhanced notifications" or enable sensitive notification content in your app or mobile settings to allow Frugify to read transaction details.'
+        '🚨 MISSING TRANSACTIONS!',
+        'Your transaction data is being BLOCKED by privacy settings!\n\nWithout this, you\'re missing important financial data!',
+        [
+          {
+            text: 'Ignore & Miss Data',
+            style: 'destructive',
+          },
+          {
+            text: 'Fix Settings Now',
+            style: 'default',
+            onPress: () => {
+              Alert.alert(
+                'Quick Setup Guide',
+                '1. Open your Phone Settings\n2. Look for "Notifications" settings\n3. Enable "Show sensitive content" or "Enhanced notifications"\n\nThis ensures you never miss a transaction!',
+                [{ text: 'Got It!', style: 'default' }]
+              );
+            },
+          },
+        ],
+        { cancelable: false }
       );
     }
     // If all processed, clear messages
