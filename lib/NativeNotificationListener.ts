@@ -73,7 +73,7 @@ export async function syncTransactionalMessages() {
             onPress: () => {
               Alert.alert(
                 'Quick Setup Guide',
-                '1. Open your Phone Settings\n2. Look for "Notifications" settings\n3. Enable "Show sensitive content" or "Enhanced notifications"\n\nThis ensures you never miss a transaction!',
+                '1. Open your Phone Settings\n2. Look for "Notifications" settings\n3. Enable "Show sensitive content" or "Enable or Disable Enhanced notifications"\n4. Also enable "Show content on lock screen"\n\nThis ensures you never miss a transaction!',
                 [{ text: 'Got It!', style: 'default' }]
               );
             },
