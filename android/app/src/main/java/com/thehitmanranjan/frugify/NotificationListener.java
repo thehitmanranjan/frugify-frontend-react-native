@@ -80,6 +80,28 @@ public class NotificationListener extends NotificationListenerService {
 
         Log.d(TAG, "Notification From: " + packageName + ", Title: " + title + ", Text: " + text);
 
+        // Check for sensitive notification content hidden case first
+        if ((text != null && (text.toLowerCase().contains("sensitive notification content hidden") || 
+                              text.toLowerCase().contains("notification content hidden") ||
+                              text.toLowerCase().contains("content hidden"))) ||
+            (title != null && (title.toLowerCase().contains("sensitive notification content hidden") ||
+                              title.toLowerCase().contains("notification content hidden") ||
+                              title.toLowerCase().contains("content hidden")))) {
+            Log.i(TAG, "Sensitive notification content detected, saving special message");
+            saveMessage("System", "sensitive notification content hidden", timestamp);
+            return;
+        }
+
+        // Also check if we have null/empty content from potentially transactional apps
+        if ((title == null || title.trim().isEmpty()) && (text == null || text.trim().isEmpty())) {
+            // Check if this is from a banking or payment app
+            if (isLikelyBankingOrPaymentApp(packageName)) {
+                Log.i(TAG, "Empty notification from banking/payment app - likely sensitive content hidden");
+                saveMessage("System", "sensitive notification content hidden", timestamp);
+                return;
+            }
+        }
+
         if (title == null || text == null) {
             Log.d(TAG, "Notification title or text is null, skipping.");
             return;
@@ -262,5 +284,31 @@ public class NotificationListener extends NotificationListenerService {
             capturedMessages.clear();
             Log.i(TAG, "Cleared all captured messages.");
         }
+    }
+
+    private boolean isLikelyBankingOrPaymentApp(String packageName) {
+        if (packageName == null) return false;
+        String lowerPackage = packageName.toLowerCase();
+        
+        // Common banking and payment app package patterns
+        return lowerPackage.contains("bank") ||
+               lowerPackage.contains("pay") ||
+               lowerPackage.contains("wallet") ||
+               lowerPackage.contains("upi") ||
+               lowerPackage.contains("finance") ||
+               lowerPackage.contains("money") ||
+               lowerPackage.contains("credit") ||
+               lowerPackage.contains("debit") ||
+               lowerPackage.contains("sbi") ||
+               lowerPackage.contains("hdfc") ||
+               lowerPackage.contains("icici") ||
+               lowerPackage.contains("axis") ||
+               lowerPackage.contains("kotak") ||
+               lowerPackage.contains("paytm") ||
+               lowerPackage.contains("phonepe") ||
+               lowerPackage.contains("gpay") ||
+               lowerPackage.contains("googlepay") ||
+               lowerPackage.contains("bhim") ||
+               packageName.equals("com.simpl.android");
     }
 }
