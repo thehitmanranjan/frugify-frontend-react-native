@@ -56,6 +56,7 @@ import { PaperProvider } from 'react-native-paper'; // Import PaperProvider
 import { SyncProvider } from './contexts/SyncContext';
 import { SearchProvider } from './contexts/SearchContext';
 import { SyncManager } from './contexts/SyncManager';
+import { ToastProvider } from './contexts/ToastContext';
 import { GoogleOAuthModal } from './components/GoogleOAuthModal';
 
 // API Client
@@ -499,8 +500,10 @@ export default function App() {
               <DateProvider>
                 <SearchProvider>
                   <SyncProvider>
-                    <SyncManager />
-                    <MainScreen />
+                    <ToastProvider>
+                      <SyncManager />
+                      <MainScreen />
+                    </ToastProvider>
                   </SyncProvider>
                 </SearchProvider>
               </DateProvider>

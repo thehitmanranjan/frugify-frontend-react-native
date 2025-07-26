@@ -1,6 +1,7 @@
 import { NativeModules, Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, queryClient } from './apiClient';
+import { showGlobalToast } from '../contexts/ToastContext';
 
 const LINKING_ERROR =
   `The package 'frugify-notification-listener' doesn't seem to be linked. Make sure: \n\n` +
@@ -59,27 +60,9 @@ export async function syncTransactionalMessages() {
       }
     }
     if (sensitiveHiddenFound) {
-      Alert.alert(
-        '🚨 MISSING TRANSACTIONS!',
-        'Your transaction data is being BLOCKED by privacy settings!\n\nWithout this, you\'re missing important financial data!',
-        [
-          {
-            text: 'Ignore & Miss Data',
-            style: 'destructive',
-          },
-          {
-            text: 'Fix Settings Now',
-            style: 'default',
-            onPress: () => {
-              Alert.alert(
-                'Quick Setup Guide',
-                '1. Open your Phone Settings\n2. Look for "Notifications" settings\n3. Enable "Show sensitive content" or "Enable or Disable Enhanced notifications"\n4. Also enable "Show content on lock screen"\n\nThis ensures you never miss a transaction!',
-                [{ text: 'Got It!', style: 'default' }]
-              );
-            },
-          },
-        ],
-        { cancelable: false }
+      showGlobalToast(
+        'Notification Hidden',
+        'Some transaction notifications were hidden by privacy settings. If you don\'t see expected transaction messages, try toggling Enhanced Notifications on/off in your phone settings.'
       );
     }
     // If all processed, clear messages
