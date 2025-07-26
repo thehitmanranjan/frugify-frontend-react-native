@@ -1,5 +1,4 @@
-import React, { useEffect, useRef } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -57,14 +56,13 @@ import { SyncProvider } from './contexts/SyncContext';
 import { SearchProvider } from './contexts/SearchContext';
 import { SyncManager } from './contexts/SyncManager';
 import { ToastProvider } from './contexts/ToastContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import { GoogleOAuthModal } from './components/GoogleOAuthModal';
 
 // API Client
 import { queryClient } from './lib/apiClient';
 import { navigationRef } from './lib/RootNavigation';
 import { linking } from './lib/linking';
-import NotificationModule from './lib/NativeNotificationListener';
-import { ensureNotificationListenerPermission } from './lib/NativeNotificationListener';
 
 // Types
 export type RootStackParamList = {
@@ -471,44 +469,26 @@ const MainScreen = () => {
 }
 
 export default function App() {
-  const appState = useRef<AppStateStatus>(AppState.currentState);
-
-  useEffect(() => {
-    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        await ensureNotificationListenerPermission();
-      }
-      appState.current = nextAppState;
-    };
-
-    // Initial call on mount
-    (async () => {
-      await ensureNotificationListenerPermission();
-    })();
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => {
-      subscription.remove();
-    };
-  }, []);
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ThemeProvider>
-            <PaperProvider>
-              <DateProvider>
-                <SearchProvider>
-                  <SyncProvider>
-                    <ToastProvider>
-                      <SyncManager />
-                      <MainScreen />
-                    </ToastProvider>
-                  </SyncProvider>
-                </SearchProvider>
-              </DateProvider>
-            </PaperProvider>
-          </ThemeProvider>
+          <SettingsProvider>
+            <ThemeProvider>
+              <PaperProvider>
+                <DateProvider>
+                  <SearchProvider>
+                    <SyncProvider>
+                      <ToastProvider>
+                        <SyncManager />
+                        <MainScreen />
+                      </ToastProvider>
+                    </SyncProvider>
+                  </SearchProvider>
+                </DateProvider>
+              </PaperProvider>
+            </ThemeProvider>
+          </SettingsProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 import Header from '../components/Header';
 import { RootStackParamList } from '../App';
@@ -17,6 +18,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { isDarkMode, toggleTheme, theme } = useTheme();
   const { user, logout, sendOtp, verifyOtp, resetPassword } = useAuth();
+  const { autoFillTransactionEnabled, toggleAutoFillTransaction, isLoading: settingsLoading } = useSettings();
 
   // Debug log to see what user data we have
   React.useEffect(() => {
@@ -196,8 +198,37 @@ export default function SettingsScreen() {
 
         {/* Dark Mode Toggle */}
         <View style={styles.settingItem}>
-          <Text style={[styles.settingText, { color: theme.colors.text }]}>Dark Mode</Text>
+          <View style={styles.settingItemContent}>
+            <MaterialCommunityIcons 
+              name="theme-light-dark" 
+              size={24} 
+              color={theme.colors.text} 
+              style={styles.settingIcon}
+            />
+            <Text style={[styles.settingText, { color: theme.colors.text }]}>Dark Mode</Text>
+          </View>
           <Switch value={isDarkMode} onValueChange={toggleTheme} color={theme.colors.primary} />
+        </View>
+
+        <Divider style={{ backgroundColor: theme.colors.placeholder, marginVertical: 16 }} />
+
+        {/* Auto-Fill Transaction Toggle */}
+        <View style={styles.settingItem}>
+          <View style={styles.settingItemContent}>
+            <MaterialCommunityIcons 
+              name="auto-fix" 
+              size={24} 
+              color={theme.colors.text} 
+              style={styles.settingIcon}
+            />
+            <Text style={[styles.settingText, { color: theme.colors.text }]}>Auto-Fill Transaction</Text>
+          </View>
+          <Switch 
+            value={autoFillTransactionEnabled} 
+            onValueChange={toggleAutoFillTransaction} 
+            color={theme.colors.primary}
+            disabled={settingsLoading}
+          />
         </View>
         
         <Divider style={{ backgroundColor: theme.colors.placeholder, marginVertical: 16 }} />
