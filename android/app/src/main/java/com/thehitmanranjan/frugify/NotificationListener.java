@@ -28,6 +28,8 @@ public class NotificationListener extends NotificationListenerService {
             "credited", "debited",
             "transaction", "spent", "received", "A/C", "ac no", "account", "UPI", "txn",
             "INR", "Rs.", "sent", "received", "transfer", "withdrawal", "deposit",
+            "charged", "simpl", "zomato", "swiggy", "amazon", "flipkart", "payment",
+            "purchase", "order", "bill", "invoice", "refund", "cashback",
             // More keywords can be added
     };
 
@@ -39,7 +41,6 @@ public class NotificationListener extends NotificationListenerService {
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
         super.onNotificationPosted(sbn);
-
 
         String packageName = sbn.getPackageName();
         // Exclude Gmail notifications to avoid duplication
@@ -81,12 +82,12 @@ public class NotificationListener extends NotificationListenerService {
         Log.d(TAG, "Notification From: " + packageName + ", Title: " + title + ", Text: " + text);
 
         // Check for sensitive notification content hidden case first
-        if ((text != null && (text.toLowerCase().contains("sensitive notification content hidden") || 
-                              text.toLowerCase().contains("notification content hidden") ||
-                              text.toLowerCase().contains("content hidden"))) ||
-            (title != null && (title.toLowerCase().contains("sensitive notification content hidden") ||
-                              title.toLowerCase().contains("notification content hidden") ||
-                              title.toLowerCase().contains("content hidden")))) {
+        if ((text != null && (text.toLowerCase().contains("sensitive notification content hidden") ||
+                text.toLowerCase().contains("notification content hidden") ||
+                text.toLowerCase().contains("content hidden"))) ||
+                (title != null && (title.toLowerCase().contains("sensitive notification content hidden") ||
+                        title.toLowerCase().contains("notification content hidden") ||
+                        title.toLowerCase().contains("content hidden")))) {
             Log.i(TAG, "Sensitive notification content detected, saving special message");
             saveMessage("System", "sensitive notification content hidden", timestamp);
             return;
@@ -171,6 +172,18 @@ public class NotificationListener extends NotificationListenerService {
             return false;
         }
 
+        // Check if this is from a target app (Simpl, Amazon, etc.) first
+        String packageName = null; // We need to pass package name for better detection
+
+        // Check if message contains Simpl or Amazon Pay content
+        if (message.toLowerCase().contains("simpl") || message.toLowerCase().contains("amazon pay")) {
+            Log.d(TAG, "Message contains Simpl or Amazon Pay content, checking for transactional keywords.");
+            if (isTransactionalContent(message)) {
+                Log.d(TAG, "Simpl/Amazon Pay transaction detected in message content.");
+                return true;
+            }
+        }
+
         if (isSimplOrAmazonPay(title)) {
             // For Simpl or Amazon Pay, skip SENDER_PATTERN and rely on content
             Log.d(TAG, "Sender is Simpl or Amazon Pay, skipping SENDER_PATTERN check in isTransactional.");
@@ -233,7 +246,9 @@ public class NotificationListener extends NotificationListenerService {
         if (title == null)
             return false;
         String lowerTitle = title.toLowerCase();
-        return lowerTitle.contains("simpl") || lowerTitle.contains("amazon pay");
+        return lowerTitle.contains("simpl") || lowerTitle.contains("amazon pay") ||
+                lowerTitle.equals("transaction success") || lowerTitle.equals("payment successful") ||
+                lowerTitle.equals("transaction complete") || lowerTitle.equals("payment complete");
     }
 
     private void saveMessage(String sender, String message, long timestamp) {
@@ -287,28 +302,29 @@ public class NotificationListener extends NotificationListenerService {
     }
 
     private boolean isLikelyBankingOrPaymentApp(String packageName) {
-        if (packageName == null) return false;
+        if (packageName == null)
+            return false;
         String lowerPackage = packageName.toLowerCase();
-        
+
         // Common banking and payment app package patterns
         return lowerPackage.contains("bank") ||
-               lowerPackage.contains("pay") ||
-               lowerPackage.contains("wallet") ||
-               lowerPackage.contains("upi") ||
-               lowerPackage.contains("finance") ||
-               lowerPackage.contains("money") ||
-               lowerPackage.contains("credit") ||
-               lowerPackage.contains("debit") ||
-               lowerPackage.contains("sbi") ||
-               lowerPackage.contains("hdfc") ||
-               lowerPackage.contains("icici") ||
-               lowerPackage.contains("axis") ||
-               lowerPackage.contains("kotak") ||
-               lowerPackage.contains("paytm") ||
-               lowerPackage.contains("phonepe") ||
-               lowerPackage.contains("gpay") ||
-               lowerPackage.contains("googlepay") ||
-               lowerPackage.contains("bhim") ||
-               packageName.equals("com.simpl.android");
+                lowerPackage.contains("pay") ||
+                lowerPackage.contains("wallet") ||
+                lowerPackage.contains("upi") ||
+                lowerPackage.contains("finance") ||
+                lowerPackage.contains("money") ||
+                lowerPackage.contains("credit") ||
+                lowerPackage.contains("debit") ||
+                lowerPackage.contains("sbi") ||
+                lowerPackage.contains("hdfc") ||
+                lowerPackage.contains("icici") ||
+                lowerPackage.contains("axis") ||
+                lowerPackage.contains("kotak") ||
+                lowerPackage.contains("paytm") ||
+                lowerPackage.contains("phonepe") ||
+                lowerPackage.contains("gpay") ||
+                lowerPackage.contains("googlepay") ||
+                lowerPackage.contains("bhim") ||
+                packageName.equals("com.simpl.android");
     }
 }
