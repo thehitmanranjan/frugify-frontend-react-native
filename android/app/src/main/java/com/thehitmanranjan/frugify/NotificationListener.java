@@ -29,7 +29,7 @@ public class NotificationListener extends NotificationListenerService {
             "transaction", "spent", "received", "A/C", "ac no", "account", "UPI", "txn",
             "INR", "Rs.", "sent", "received", "transfer", "withdrawal", "deposit",
             "charged", "simpl", "zomato", "swiggy", "amazon", "flipkart", "payment",
-            "purchase", "order", "bill", "invoice", "refund", "cashback",
+            "purchase", "order", "bill", "invoice", "refund", "cashback", "charged"
             // More keywords can be added
     };
 
