@@ -10,7 +10,10 @@
       }
     },
     "android": {
-      "package": "com.thehitmanranjan.frugify"
+      "package": "com.thehitmanranjan.frugify",
+      "compileSdkVersion": 35,
+      "targetSdkVersion": 35,
+      "buildToolsVersion": "35.0.0"
     },
     "splash": {
       "backgroundColor": "#ffffff"
