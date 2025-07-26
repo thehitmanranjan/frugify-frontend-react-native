@@ -7,8 +7,6 @@ import android.service.notification.StatusBarNotification;
 import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class NotificationListener extends NotificationListenerService {
 
@@ -16,12 +14,7 @@ public class NotificationListener extends NotificationListenerService {
     private static final String[] TARGET_APPS = {
             "com.google.android.apps.messaging", // Google Messages
             "com.simpl.android", // Simpl
-            "in.amazon.mShop.android.shopping", // Amazon Shopping
     };
-
-    // Regex to identify transactional senders (e.g., XX-ICICI, VK-HDFCBK)
-    // This is a basic pattern and might need refinement.
-    private static final Pattern SENDER_PATTERN = Pattern.compile("^[A-Z]{2}-[A-Z0-9]{5,}$");
 
     // Keywords to identify transactional messages
     private static final String[] TRANSACTIONAL_KEYWORDS = {
@@ -58,10 +51,7 @@ public class NotificationListener extends NotificationListenerService {
 
         // Also consider any app that might send transactional alerts, not just the
         // explicitly listed ones.
-        // This part might require more sophisticated logic or relying on the content
-        // analysis.
-        // For now, we'll proceed if it's a target app OR if the content looks
-        // transactional.
+        // For now, we'll proceed if it's a target app.
 
         Notification notification = sbn.getNotification();
         if (notification == null) {
@@ -108,9 +98,9 @@ public class NotificationListener extends NotificationListenerService {
             return;
         }
 
-        // Primary filter: Is it from one of the target messaging apps?
+        // Only process notifications from target apps
         if (isTargetApp) {
-            // For target apps, apply stricter transactional content filtering
+            // For target apps, apply transactional content filtering
             if (isTransactional(title, text)) {
                 Log.i(TAG, "Transactional Message Captured from Target App: " + title + " - " + text);
                 saveMessage(title, text, timestamp);
@@ -118,40 +108,9 @@ public class NotificationListener extends NotificationListenerService {
                 Log.d(TAG, "Non-transactional message from target app: " + title);
             }
         } else {
-            // Secondary filter: For other apps, is the content itself strongly indicative
-            // of a transaction?
-            // This helps catch bank app notifications etc.
-            // We might want to be more lenient or have a different keyword set for these.
-            if (isPotentiallyTransactionalSender(title) && isTransactionalContent(text)) {
-                Log.i(TAG, "Transactional Message Captured from Other App: " + title + " - " + text);
-                saveMessage(title, text, timestamp);
-            } else {
-                Log.d(TAG, "Ignoring notification from non-target app or non-transactional content: " + packageName);
-            }
+            // Ignore all notifications from non-target apps
+            Log.d(TAG, "Ignoring notification from non-target app: " + packageName);
         }
-    }
-
-    private boolean isPotentiallyTransactionalSender(String title) {
-        if (title == null)
-            return false;
-        if (isSimplOrAmazonPay(title)) {
-            // For Simpl or Amazon Pay, skip SENDER_PATTERN and rely on content
-            Log.d(TAG, "Sender is Simpl or Amazon Pay, skipping SENDER_PATTERN check.");
-            return true;
-        }
-        Matcher matcher = SENDER_PATTERN.matcher(title);
-        if (matcher.find()) {
-            Log.d(TAG, "Potentially transactional sender: " + title);
-            return true;
-        }
-        // Also check for common bank names if not matching the XX-BANK pattern
-        String lowerTitle = title.toLowerCase();
-        if (lowerTitle.contains("bank") || lowerTitle.contains("card") || lowerTitle.contains("finance")
-                || lowerTitle.contains("paytm") || lowerTitle.contains("gpay")) {
-            Log.d(TAG, "Sender contains bank/payment keyword: " + title);
-            return true;
-        }
-        return false;
     }
 
     private boolean isTransactionalContent(String text) {
@@ -172,45 +131,28 @@ public class NotificationListener extends NotificationListenerService {
             return false;
         }
 
-        // Check if this is from a target app (Simpl, Amazon, etc.) first
-        String packageName = null; // We need to pass package name for better detection
-
-        // Check if message contains Simpl or Amazon Pay content
+        // Check if message contains content from known payment services
         if (message.toLowerCase().contains("simpl") || message.toLowerCase().contains("amazon pay")) {
-            Log.d(TAG, "Message contains Simpl or Amazon Pay content, checking for transactional keywords.");
+            Log.d(TAG, "Message contains known payment service content, checking for transactional keywords.");
             if (isTransactionalContent(message)) {
-                Log.d(TAG, "Simpl/Amazon Pay transaction detected in message content.");
+                Log.d(TAG, "Payment service transaction detected in message content.");
                 return true;
             }
         }
 
-        if (isSimplOrAmazonPay(title)) {
-            // For Simpl or Amazon Pay, skip SENDER_PATTERN and rely on content
-            Log.d(TAG, "Sender is Simpl or Amazon Pay, skipping SENDER_PATTERN check in isTransactional.");
+        if (isKnownPaymentService(title)) {
+            // For known payment services, skip pattern checks and rely on content
+            Log.d(TAG, "Sender is from known payment service, checking transactional content.");
             return isTransactionalContent(message);
         }
 
-        // Check 1: Sender format (e.g., XX-ICICI)
-        Matcher senderMatcher = SENDER_PATTERN.matcher(title);
-        if (senderMatcher.find()) {
-            Log.d(TAG, "Sender pattern matched for: " + title);
-            // If sender pattern matches, it's highly likely transactional.
-            // We can add further checks on message content if needed.
-            return isTransactionalContent(message);
-        }
-
-        // Check 2: Keywords in message content
+        // Check for transactional keywords in message content
         if (isTransactionalContent(message)) {
             Log.d(TAG, "Transactional keyword found in message: " + message);
-            // If keywords are found, check if the sender is likely a business or service
-            // This helps avoid flagging personal messages that might contain words like
-            // "payment"
-            if (isPotentiallyBusinessSender(title)) {
-                return true;
-            }
+            return true;
         }
 
-        // Check 3: Specific patterns for OTPs if not caught by keywords
+        // Check for OTP patterns
         if (message.toLowerCase().contains("otp") && message.matches(".*\\b\\d{4,8}\\b.*")) {
             Log.d(TAG, "OTP pattern matched for: " + message);
             return true; // OTPs are always transactional
@@ -220,35 +162,18 @@ public class NotificationListener extends NotificationListenerService {
         return false;
     }
 
-    private boolean isPotentiallyBusinessSender(String title) {
-        // For Simpl or Amazon Pay, always treat as business sender
-        if (isSimplOrAmazonPay(title)) {
-            Log.d(TAG, "Sender is Simpl or Amazon Pay, treating as business sender.");
-            return true;
-        }
-        // Avoid flagging senders that are likely personal contact names
-        // Simple check: if title contains spaces and is not matching common business
-        // patterns
-        if (title.contains(" ") && !SENDER_PATTERN.matcher(title).find()) {
-            // More sophisticated checks could involve looking for +[country code] or known
-            // business names
-            if (title.matches("^\\+[0-9\\s]+$")) { // Looks like a phone number
-                Log.d(TAG, "Sender looks like a phone number, potentially business: " + title);
-                return true;
-            }
-            Log.d(TAG, "Sender '" + title + "' might be a personal contact, being cautious.");
-            return false; // Likely a person's name
-        }
-        return true; // Likely a business shortcode, app name, or single word name
-    }
-
-    private boolean isSimplOrAmazonPay(String title) {
+    private boolean isKnownPaymentService(String title) {
         if (title == null)
             return false;
         String lowerTitle = title.toLowerCase();
-        return lowerTitle.contains("simpl") || lowerTitle.contains("amazon pay") ||
-                lowerTitle.equals("transaction success") || lowerTitle.equals("payment successful") ||
-                lowerTitle.equals("transaction complete") || lowerTitle.equals("payment complete");
+
+        // Check for known payment service names and common transaction titles
+        return lowerTitle.contains("simpl") ||
+                lowerTitle.contains("amazon pay") ||
+                lowerTitle.equals("transaction success") ||
+                lowerTitle.equals("payment successful") ||
+                lowerTitle.equals("transaction complete") ||
+                lowerTitle.equals("payment complete");
     }
 
     private void saveMessage(String sender, String message, long timestamp) {
