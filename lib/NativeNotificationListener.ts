@@ -1,7 +1,7 @@
 import { NativeModules, Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, queryClient } from './apiClient';
-import { showGlobalToast } from '../contexts/ToastContext';
+import { showGlobalToast, showGlobalPermissionModal } from '../contexts/ToastContext';
 
 const LINKING_ERROR =
   `The package 'frugify-notification-listener' doesn't seem to be linked. Make sure: \n\n` +
@@ -94,33 +94,21 @@ export async function ensureNotificationListenerPermission() {
 
     const enabled = await NotificationModule.isNotificationListenerEnabled();
     if (!enabled) {
-      Alert.alert(
-        'Permission Required',
-        'Frugify needs notification access to read your transactional messages and auto-sync your transactions. Please grant notification listener permission.',
-        [
-          {
-            text: "Don't Ask Again",
-            onPress: async () => {
-              await AsyncStorage.setItem('dontAskNotificationPermission', 'true');
-              Alert.alert(
-                'Reminder',
-                'You will need to manually grant notification listener permission from the settings app.',
-                [{ text: 'OK' }]
-              );
-            },
-            style: 'destructive',
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Allow',
-            onPress: () => NotificationModule.requestNotificationListenerPermission(),
-          },
-        ],
-        { cancelable: true }
-      );
+      showGlobalPermissionModal({
+        title: 'Permission Required',
+        message: 'Frugify needs notification access to read your transactional messages and auto-sync your transactions. Please grant notification listener permission.',
+        onAllow: () => NotificationModule.requestNotificationListenerPermission(),
+        onCancel: () => {
+          // Do nothing, just dismiss
+        },
+        onDontAskAgain: async () => {
+          await AsyncStorage.setItem('dontAskNotificationPermission', 'true');
+          showGlobalToast(
+            'Reminder',
+            'You will need to manually grant notification listener permission from the settings app.'
+          );
+        },
+      });
     }
   } catch (err) {
     // fallback: just try to request
