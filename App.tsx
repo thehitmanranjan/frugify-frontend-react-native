@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Touchable, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Dialog, Portal, TextInput as PaperTextInput, Button } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Error Boundary for crash handling
 class ErrorBoundary extends React.Component {
@@ -471,26 +472,28 @@ const MainScreen = () => {
 export default function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <SettingsProvider>
-            <ThemeProvider>
-              <PaperProvider>
-                <DateProvider>
-                  <SearchProvider>
-                    <SyncProvider>
-                      <ToastProvider>
-                        <SyncManager />
-                        <MainScreen />
-                      </ToastProvider>
-                    </SyncProvider>
-                  </SearchProvider>
-                </DateProvider>
-              </PaperProvider>
-            </ThemeProvider>
-          </SettingsProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <SettingsProvider>
+              <ThemeProvider>
+                <PaperProvider>
+                  <DateProvider>
+                    <SearchProvider>
+                      <SyncProvider>
+                        <ToastProvider>
+                          <SyncManager />
+                          <MainScreen />
+                        </ToastProvider>
+                      </SyncProvider>
+                    </SearchProvider>
+                  </DateProvider>
+                </PaperProvider>
+              </ThemeProvider>
+            </SettingsProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }

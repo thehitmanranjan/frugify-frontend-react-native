@@ -11,7 +11,7 @@ import TimeRangeSelector from '../components/TimeRangeSelector';
 import BudgetSummary from '../components/BudgetSummary';
 import AddTransactionSheet from '../components/AddTransactionSheet';
 import SpeechToTextSheet from '../components/SpeechToTextSheet';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSummary } from '../hooks/useTransactions';
 import { useDate } from '../contexts/DateContext';
 import { useSearch } from '../contexts/SearchContext';
@@ -28,6 +28,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme, isDarkMode } = useTheme(); // Get isDarkMode from context
   const { searchTarget, clearSearchTarget } = useSearch();
+  const insets = useSafeAreaInsets();
 
   const [addTransactionVisible, setAddTransactionVisible] = useState(false);
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
@@ -236,7 +237,7 @@ export default function HomeScreen() {
           </View>
         </View>
         {/* FAB menu for adding transactions - Assuming these buttons are themed correctly or don't need theming */}
-        <View style={styles.fabContainer}>
+        <View style={[styles.fabContainer, { bottom: insets.bottom + 20 }]}>
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: '#FF9800' }]}
             onPress={() => setSpeechSheetVisible(true)}
@@ -287,7 +288,7 @@ export default function HomeScreen() {
         />
       </View>
       {/* FAB menu for adding transactions */}
-      <View style={styles.fabContainer}>
+      <View style={[styles.fabContainer, { bottom: insets.bottom + 20 }]}>
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: '#FF9800' }]}
           onPress={() => setSpeechSheetVisible(true)}
@@ -337,7 +338,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 20,
     flexDirection: 'row',
     justifyContent: 'center', // Center all buttons as a group
     alignItems: 'center',
