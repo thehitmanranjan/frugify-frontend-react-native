@@ -9,10 +9,12 @@ import Header from '../components/Header';
 import DateSelector from '../components/DateSelector';
 import TimeRangeSelector from '../components/TimeRangeSelector';
 import BudgetSummary from '../components/BudgetSummary';
+import BudgetStatus from '../components/BudgetStatus';
 import AddTransactionSheet from '../components/AddTransactionSheet';
 import SpeechToTextSheet from '../components/SpeechToTextSheet';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSummary } from '../hooks/useTransactions';
+import { useBudgets } from '../hooks/useBudgets';
 import { useDate } from '../contexts/DateContext';
 import { useSearch } from '../contexts/SearchContext';
 import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
@@ -58,6 +60,15 @@ export default function HomeScreen() {
     endDateStr
   );
 
+  // Budget data
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
+  const { data: budgets } = useBudgets(currentMonth, currentYear);
+
+  const totalBudget = budgets?.reduce((sum, b) => sum + b.amount, 0) ?? 0;
+  const totalSpent = budgets?.reduce((sum, b) => sum + b.spent, 0) ?? 0;
+
   // Handle search target from Header search
   useEffect(() => {
     if (searchTarget && summary && summary.transactions) {
@@ -84,6 +95,9 @@ export default function HomeScreen() {
       <DateSelector />
       <TimeRangeSelector />
       <BudgetSummary />
+      {budgets && budgets.length > 0 && (
+        <BudgetStatus totalBudget={totalBudget} totalSpent={totalSpent} />
+      )}
       <Text style={[styles.heading, { color: theme.colors.text }]}>Transactions</Text>
     </>
   );
