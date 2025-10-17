@@ -7,6 +7,7 @@ import { StyleSheet, View, ActivityIndicator, Text, TextInput, TouchableOpacity,
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Dialog, Portal, TextInput as PaperTextInput, Button } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Error Boundary for crash handling
 class ErrorBoundary extends React.Component {
@@ -47,6 +48,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import CategoriesScreen from './screens/CategoriesScreen';
 import SignupScreen from './screens/SignupScreen';
 import EmailOtpScreen from './screens/EmailOtpScreen';
+import OnboardingScreen from './screens/OnboardingScreen';
 
 // Context
 import { DateProvider } from './contexts/DateContext';
@@ -100,6 +102,22 @@ const MainScreen = () => {
   const [verifiedEmail, setVerifiedEmail] = React.useState('');
   const [emailToken, setEmailToken] = React.useState('');
   const [signupPrompt, setSignupPrompt] = React.useState(false);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = React.useState<boolean | null>(null);
+
+  // Check if user has seen onboarding
+  React.useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        const onboardingStatus = await AsyncStorage.getItem('hasSeenOnboarding');
+        setHasSeenOnboarding(onboardingStatus === 'true');
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        setHasSeenOnboarding(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, []);
 
   // Custom login handler to show signup prompt if user not found
   const LoginWithSignupPrompt = () => {
@@ -413,11 +431,34 @@ const MainScreen = () => {
     );
   };
 
-  if (isLoading) {
+  if (isLoading || hasSeenOnboarding === null) {
     return (
       <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
+    );
+  }
+
+  // Show onboarding if user hasn't seen it yet and is not authenticated
+  if (!hasSeenOnboarding && !isAuthenticated) {
+    return (
+      <NavigationContainer 
+        ref={navigationRef}
+        theme={{
+          dark: theme.dark,
+          colors: {
+            background: theme.colors.background,
+            primary: '',
+            card: '',
+            text: '',
+            border: '',
+            notification: ''
+          }
+        }}
+      >
+        <OnboardingScreen onComplete={() => setHasSeenOnboarding(true)} />
+        <StatusBar style={theme.dark ? "light" : "dark"} />
+      </NavigationContainer>
     );
   }
 
