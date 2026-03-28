@@ -118,23 +118,70 @@ export function useUpdateTransaction() {
   });
 }
 
-// Delete a transaction
 export function useDeleteTransaction() {
   return useMutation({
     mutationFn: async (id: number) => {
       await apiRequest('DELETE', `/api/transactions/${id}`);
       return id;
     },
-    onSuccess: (id) => {
+    onMutate: async (id: number) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['/api/transactions/summary'] });
+
+      // Snapshot the previous value
+      const previousSummary = queryClient.getQueryData(['/api/transactions/summary']);
+
+      // Optimistically update the summary cache to instantly hide it
+      queryClient.setQueriesData({ queryKey: ['/api/transactions/summary'] }, (oldData: any) => {
+        if (!oldData) return oldData;
+        const txToDelete = oldData.transactions?.find((t: any) => t.id === id);
+        
+        let newIncome = oldData.income || 0;
+        let newExpense = oldData.expense || 0;
+        let newCategoryData = oldData.categoryData ? [...oldData.categoryData] : [];
+
+        if (txToDelete) {
+          if (txToDelete.category?.type === 'income') {
+            newIncome -= txToDelete.amount;
+          } else {
+            newExpense -= txToDelete.amount;
+          }
+
+          const catIndex = newCategoryData.findIndex((c: any) => c.id === txToDelete.categoryId);
+          if (catIndex >= 0) {
+            newCategoryData[catIndex] = { ...newCategoryData[catIndex] };
+            newCategoryData[catIndex].amount -= txToDelete.amount;
+            if (newCategoryData[catIndex].amount <= 0) {
+              newCategoryData.splice(catIndex, 1);
+            }
+          }
+        }
+
+        return {
+          ...oldData,
+          income: newIncome,
+          expense: newExpense,
+          balance: newIncome - newExpense,
+          categoryData: newCategoryData,
+          transactions: oldData.transactions?.filter((t: any) => t.id !== id) || [],
+        };
+      });
+
+      return { previousSummary };
+    },
+    onError: (error: Error, id, context) => {
+      console.error('Error deleting transaction:', error.message);
+      // Rollback on failure
+      if (context?.previousSummary) {
+        queryClient.setQueriesData({ queryKey: ['/api/transactions/summary'] }, context.previousSummary);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions', id] });
       queryClient.invalidateQueries({
         queryKey: ['/api/transactions/summary'],
-        exact: false // This will match all keys that start with this prefix
+        exact: false 
       });
-    },
-    onError: (error: Error) => {
-      console.error('Error deleting transaction:', error.message);
     },
   });
 }

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Platform, S
 import { Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCategories } from '../hooks/useCategories';
-import { useCreateTransaction } from '../hooks/useTransactions';
+import { useCreateLocalTransaction } from '../hooks/useLocalTransactions';
 import { format } from 'date-fns';
 import { Calendar } from 'react-native-calendars';
 import CategoryIcon from './CategoryIcon';
@@ -26,7 +26,7 @@ export default function AddTransactionSheet({
 }: AddTransactionSheetProps) {
   const isEditMode = !!transaction;
   const { data: categories, isLoading: isCategoriesLoading } = useCategories(transactionType);
-  const createTransaction = useCreateTransaction();
+  const createTransaction = useCreateLocalTransaction(); // Use local-first hook
   const updateTransaction = require('../hooks/useTransactions').useUpdateTransaction();
   const deleteTransaction = require('../hooks/useTransactions').useDeleteTransaction();
   const { currentDate } = useDate();
@@ -123,33 +123,47 @@ export default function AddTransactionSheet({
     }
     setErrors(newErrors);
     if (newErrors.amount || newErrors.categoryId) return;
+    
+    // Close modal immediately for instant feedback
+    onClose();
+    
+    // Save in background (non-blocking)
     try {
       if (isEditMode && transaction) {
-        await updateTransaction.mutateAsync({
+        updateTransaction.mutate({
           id: transaction.id,
           amount: parseFloat(amount),
           categoryId: parseInt(categoryId),
           description: description || undefined,
-          date: date, // Pass as string
+          date: date,
         });
       } else {
-        await createTransaction.mutateAsync({
+        // Save locally first - happens in background
+        createTransaction.mutate({
           amount: parseFloat(amount),
           categoryId: parseInt(categoryId),
           description: description || undefined,
-          date: date, // Pass as string
+          date: date,
         });
       }
-      onClose();
     } catch (error) {
       console.error('Error saving transaction:', error);
     }
   };
 
+  const deleteTransactionLocal = require('../hooks/useLocalTransactions').useDeleteLocalTransaction();
+
   const handleDelete = async () => {
     if (!transaction) return;
     try {
-      await deleteTransaction.mutateAsync(transaction.id);
+      const localId = (transaction as any)._localId;
+      if (localId) {
+        // This transaction exists in local SQLite, delete it locally (which also triggers the background API delete if synced)
+        await deleteTransactionLocal.mutateAsync(localId);
+      } else {
+        // Purely remote transaction, hit the standard API delete
+        await deleteTransaction.mutateAsync(transaction.id);
+      }
       onClose();
     } catch (error) {
       console.error('Error deleting transaction:', error);

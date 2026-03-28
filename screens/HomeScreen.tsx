@@ -11,11 +11,13 @@ import TimeRangeSelector from '../components/TimeRangeSelector';
 import BudgetSummary from '../components/BudgetSummary';
 import AddTransactionSheet from '../components/AddTransactionSheet';
 import SpeechToTextSheet from '../components/SpeechToTextSheet';
+import SyncStatusIndicator from '../components/SyncStatusIndicator';
+import TransactionSyncBadge from '../components/TransactionSyncBadge';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSummary } from '../hooks/useTransactions';
+import { useCombinedSummary } from '../hooks/useCombinedTransactions';
 import { useDate } from '../contexts/DateContext';
 import { useSearch } from '../contexts/SearchContext';
-import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
+import { useTheme } from '../contexts/ThemeContext';
 import { getQueryTimeFormat } from '../lib/date-utils';
 import { formatTransactionDate } from '../lib/date-utils';
 import { formatTransactionAmount } from '../lib/formatters';
@@ -48,11 +50,11 @@ export default function HomeScreen() {
     setAddTransactionVisible(true);
   };
 
-  // Transaction summary data
+  // Transaction summary data - combines server + pending local transactions
   const { timeRange, startDate, endDate } = useDate();
   const startDateStr = getQueryTimeFormat(startDate);
   const endDateStr = getQueryTimeFormat(endDate);
-  const { data: summary, isLoading, isError, error } = useSummary(
+  const { data: summary, isLoading, isError, error } = useCombinedSummary(
     timeRange,
     startDateStr,
     endDateStr
@@ -84,7 +86,10 @@ export default function HomeScreen() {
       <DateSelector />
       <TimeRangeSelector />
       <BudgetSummary />
-      <Text style={[styles.heading, { color: theme.colors.text }]}>Transactions</Text>
+      <View style={styles.syncStatusContainer}>
+        <Text style={[styles.heading, { color: theme.colors.text, flex: 1 }]}>Transactions</Text>
+        <SyncStatusIndicator />
+      </View>
     </>
   );
 
@@ -172,7 +177,14 @@ export default function HomeScreen() {
                 >
                   <View style={styles.transactionDetails}>
                     <View style={styles.transactionHeader}>
-                      <Text style={[styles.description, { color: theme.colors.text }]}>{tx.description || tx.category.name}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <Text style={[styles.description, { color: theme.colors.text, flex: 1 }]}>
+                          {tx.description || tx.category.name}
+                        </Text>
+                        {(tx as any)._syncStatus && (
+                          <TransactionSyncBadge syncStatus={(tx as any)._syncStatus} size={14} />
+                        )}
+                      </View>
                       <Text style={[
                         styles.amount,
                         tx.category.type === 'income' ? styles.incomeText : styles.expenseText,
@@ -375,10 +387,19 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 18,
     fontWeight: '600',
+    marginBottom: 8,
+    paddingHorizontal: 16,
+  },
+  syncStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 16,
+  },
+  categoryHeader: {
     marginTop: 16,
     marginBottom: 8,
     marginLeft: 16,
-    // color: '#333', // Theme controlled
   },
   transactionCard: { // Background color will be overridden by theme
     // backgroundColor: 'white', // Theme controlled
