@@ -59,6 +59,7 @@ import { SyncManager } from './contexts/SyncManager';
 import { ToastProvider } from './contexts/ToastContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { GoogleOAuthModal } from './components/GoogleOAuthModal';
+import { DatabaseInitializer } from './components/DatabaseInitializer';
 
 // API Client
 import { queryClient } from './lib/apiClient';
@@ -475,22 +476,24 @@ export default function App() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <SettingsProvider>
-              <ThemeProvider>
-                <PaperProvider>
-                  <DateProvider>
-                    <SearchProvider>
-                      <SyncProvider>
-                        <ToastProvider>
-                          <SyncManager />
-                          <MainScreen />
-                        </ToastProvider>
-                      </SyncProvider>
-                    </SearchProvider>
-                  </DateProvider>
-                </PaperProvider>
-              </ThemeProvider>
-            </SettingsProvider>
+            <DatabaseInitializer>
+              <SettingsProvider>
+                <ThemeProvider>
+                  <PaperProvider>
+                    <DateProvider>
+                      <SearchProvider>
+                        <SyncProvider>
+                          <ToastProvider>
+                            <SyncManager />
+                            <MainScreen />
+                          </ToastProvider>
+                        </SyncProvider>
+                      </SearchProvider>
+                    </DateProvider>
+                  </PaperProvider>
+                </ThemeProvider>
+              </SettingsProvider>
+            </DatabaseInitializer>
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator, useWindowDimensions } from '
 import { PieChart } from 'react-native-chart-kit';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSummary } from '../hooks/useTransactions';
+import { useCombinedSummary } from '../hooks/useCombinedTransactions';
 import { useDate } from '../contexts/DateContext';
 import { getQueryTimeFormat } from '../lib/date-utils';
 import { formatCurrency } from '../lib/formatters';
@@ -13,7 +14,7 @@ export default function BudgetSummary() {
   const startDateStr = getQueryTimeFormat(startDate);
   const endDateStr = getQueryTimeFormat(endDate);
 
-  const { data: summary, isLoading, isError, error } = useSummary(
+  const { data: summary, isLoading, isError, error } = useCombinedSummary(
     timeRange,
     startDateStr,
     endDateStr

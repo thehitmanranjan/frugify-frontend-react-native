@@ -325,6 +325,10 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       // Handle token-based auth logout (your original system)
       await AsyncStorage.removeItem('userToken');
       
+      // Clear local database
+      const { database } = await import('../lib/database');
+      await database.clearAll();
+      
       // Reset state
       setUserToken(null);
       setUser(null);
