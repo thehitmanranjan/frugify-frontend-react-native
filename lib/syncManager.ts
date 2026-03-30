@@ -1,10 +1,12 @@
-import { database, LocalTransaction } from './database';
+import { database, LocalTransaction, LocalBudget } from './database';
 import { apiRequest } from './apiClient';
 import { queryClient } from './apiClient';
 import NetInfo from '@react-native-community/netinfo';
 
 class SyncManager {
   private isSyncing = false;
+  private isSyncingBudgets = false;
+  private isFetchingBudgets = false;
   private syncInterval: NodeJS.Timeout | null = null;
   private listeners: Set<() => void> = new Set();
   private netInfoUnsubscribe: (() => void) | null = null;
@@ -16,11 +18,14 @@ class SyncManager {
     // Delay initial sync to allow database to initialize
     setTimeout(() => {
       this.syncPendingTransactions();
+      this.syncPendingBudgets();
+      this.fetchRemoteBudgets();
     }, 3000); // Wait 3 seconds before first sync
 
     // Periodic sync
     this.syncInterval = setInterval(() => {
       this.syncPendingTransactions();
+      this.syncPendingBudgets();
     }, intervalMs);
 
     // Sync when network becomes available
@@ -29,6 +34,8 @@ class SyncManager {
         if (state.isConnected && !this.isSyncing) {
           setTimeout(() => {
             this.syncPendingTransactions();
+            this.syncPendingBudgets();
+            this.fetchRemoteBudgets();
           }, 1000); // Small delay when network reconnects
         }
       });
@@ -55,6 +62,8 @@ class SyncManager {
   private notifyListeners() {
     this.listeners.forEach(listener => listener());
   }
+
+  // ─── Transaction Sync ────────────────────────────────────────────────────────
 
   async syncPendingTransactions(): Promise<void> {
     if (this.isSyncing) {
@@ -149,6 +158,176 @@ class SyncManager {
     }
   }
 
+  // ─── Budget Sync ─────────────────────────────────────────────────────────────
+
+  async syncPendingBudgets(): Promise<void> {
+    if (this.isSyncingBudgets) {
+      console.log('Budget sync already in progress, skipping...');
+      return;
+    }
+
+    this.isSyncingBudgets = true;
+
+    try {
+      const netInfo = await NetInfo.fetch();
+      if (!netInfo.isConnected) {
+        console.log('No internet connection, skipping budget sync');
+        return;
+      }
+
+      console.log('Starting budget sync...');
+
+      const pending = await database.getPendingBudgets();
+
+      if (pending.length === 0) {
+        console.log('No pending budgets to sync');
+        this.isSyncingBudgets = false;
+        return;
+      }
+
+      console.log(`Found ${pending.length} pending budgets`);
+
+      for (const budget of pending) {
+        try {
+          const action = budget.pendingAction || 'create';
+
+          if (action === 'delete' && budget.serverId) {
+            // Delete from server
+            await apiRequest<any>(
+              'DELETE',
+              `/api/budgets/${budget.serverId}`
+            );
+
+            // Remove from local DB after successful server delete
+            await database.deleteBudget(budget.localId);
+            console.log(`Deleted budget ${budget.localId} from server (ID: ${budget.serverId})`);
+
+          } else if (action === 'update' && budget.serverId) {
+            // Update existing budget on server
+            const serverBudget = await apiRequest<any>(
+              'PUT',
+              `/api/budgets/${budget.serverId}`,
+              {
+                amount: budget.amount,
+                month: budget.month,
+                year: budget.year,
+                categoryId: budget.categoryId,
+              }
+            );
+
+            await database.updateBudget(budget.localId, {
+              serverId: serverBudget.id,
+              syncStatus: 'synced',
+              pendingAction: undefined,
+              errorMessage: undefined,
+            });
+
+            console.log(`Updated budget ${budget.localId} -> server ID ${serverBudget.id}`);
+
+          } else if (action === 'create') {
+            // Create new budget on server
+            const serverBudget = await apiRequest<any>(
+              'POST',
+              '/api/budgets',
+              {
+                amount: budget.amount,
+                month: budget.month,
+                year: budget.year,
+                categoryId: budget.categoryId,
+              }
+            );
+
+            await database.updateBudget(budget.localId, {
+              serverId: serverBudget.id,
+              syncStatus: 'synced',
+              pendingAction: undefined,
+              errorMessage: undefined,
+            });
+
+            console.log(`Created budget ${budget.localId} -> server ID ${serverBudget.id}`);
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          await database.updateBudget(budget.localId, {
+            syncStatus: 'error',
+            errorMessage,
+          });
+          console.error(`Failed to sync budget ${budget.localId}:`, errorMessage);
+        }
+      }
+
+      // Invalidate React Query cache to refresh budget UI
+      queryClient.invalidateQueries({ queryKey: ['/api/budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['local-budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['local-budgets-all'] });
+
+      this.notifyListeners();
+    } catch (error) {
+      console.error('Error during budget sync:', error);
+    } finally {
+      this.isSyncingBudgets = false;
+    }
+  }
+
+  /**
+   * Fetch all remote budgets and sync them down to the local SQLite database.
+   * This is a "pull" operation — it ensures local DB has the latest server data.
+   */
+  async fetchRemoteBudgets(): Promise<void> {
+    if (this.isFetchingBudgets) {
+      console.log('Budget fetch already in progress, skipping...');
+      return;
+    }
+
+    this.isFetchingBudgets = true;
+    try {
+      const netInfo = await NetInfo.fetch();
+      if (!netInfo.isConnected) return;
+
+      console.log('Fetching remote budgets for local sync...');
+
+      const remoteBudgets = await apiRequest<Array<{
+        id: number;
+        amount: number;
+        month: number;
+        year: number;
+        categoryId: number | null;
+        userId?: number;
+        createdAt?: string;
+      }>>('GET', '/api/budgets');
+
+      if (!remoteBudgets || !Array.isArray(remoteBudgets)) {
+        console.log('No remote budgets found or invalid response');
+        return;
+      }
+
+      console.log(`Fetched ${remoteBudgets.length} remote budgets, syncing to local DB...`);
+
+      for (const remoteBudget of remoteBudgets) {
+        await database.upsertBudgetFromServer({
+          id: remoteBudget.id,
+          amount: remoteBudget.amount,
+          month: remoteBudget.month,
+          year: remoteBudget.year,
+          categoryId: remoteBudget.categoryId,
+        });
+      }
+
+      // Refresh local budget queries
+      queryClient.invalidateQueries({ queryKey: ['local-budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['local-budgets-all'] });
+
+      this.notifyListeners();
+      console.log('Remote budgets synced to local DB successfully');
+    } catch (error) {
+      console.error('Error fetching remote budgets:', error);
+    } finally {
+      this.isFetchingBudgets = false;
+    }
+  }
+
+  // ─── Retry & Status ──────────────────────────────────────────────────────────
+
   async retrySyncTransaction(localId: string): Promise<void> {
     const transaction = await database.getTransaction(localId);
     if (!transaction) return;
@@ -161,6 +340,18 @@ class SyncManager {
 
     // Trigger sync
     await this.syncPendingTransactions();
+  }
+
+  async retrySyncBudget(localId: string): Promise<void> {
+    const budget = await database.getBudget(localId);
+    if (!budget) return;
+
+    await database.updateBudget(localId, {
+      syncStatus: 'pending',
+      errorMessage: undefined,
+    });
+
+    await this.syncPendingBudgets();
   }
 
   async getSyncStatus(): Promise<{

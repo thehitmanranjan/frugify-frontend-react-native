@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   expenseButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#F44336',
   },
   actionButtonText: {
     color: 'white',
