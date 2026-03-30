@@ -16,6 +16,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useCategories, Category } from '../hooks/useCategories';
+import { useLocalBudgets } from '../hooks/useBudgets';
 
 interface BudgetFormModalProps {
   visible: boolean;
@@ -91,6 +92,8 @@ export default function BudgetFormModal({
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     initialData?.categoryId !== undefined ? initialData.categoryId : null
   );
+
+  const { data: budgets } = useLocalBudgets(selectedMonth, selectedYear);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
@@ -119,6 +122,27 @@ export default function BudgetFormModal({
     if (numAmount > 10000000) {
       Alert.alert('Invalid Amount', 'Budget amount seems too high. Please check.');
       return;
+    }
+
+    // Validation: Category budget shouldn't exceed overall monthly budget
+    if (selectedCategoryId !== null && budgets) {
+      const overallBudget = budgets.find(b => b.categoryId === null);
+      if (overallBudget && numAmount > overallBudget.amount) {
+        Alert.alert('Budget Exceeded', `This category budget cannot exceed your overall monthly budget (₹${overallBudget.amount}).`);
+        return;
+      }
+    }
+
+    // Validation: Overall budget wouldn't be less than the highest category budget
+    if (selectedCategoryId === null && budgets) {
+      const highestCatBudget = budgets
+        .filter(b => b.categoryId !== null) 
+        .reduce((max, b) => (b.amount > max ? b.amount : max), 0);
+      
+      if (numAmount < highestCatBudget) {
+        Alert.alert('Invalid Amount', `Your overall budget cannot be set lower than your highest category budget (₹${highestCatBudget}).`);
+        return;
+      }
     }
 
     onSubmit({

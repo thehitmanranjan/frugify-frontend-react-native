@@ -1,13 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, useWindowDimensions, TouchableOpacity } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSummary } from '../hooks/useTransactions';
 import { useCombinedSummary } from '../hooks/useCombinedTransactions';
 import { useDate } from '../contexts/DateContext';
-import { getQueryTimeFormat } from '../lib/date-utils';
+import { getQueryTimeFormat, getProRataBudget } from '../lib/date-utils';
 import { formatCurrency } from '../lib/formatters';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLocalBudgets } from '../hooks/useBudgets';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../App';
 
 export default function BudgetSummary() {
   const { timeRange, startDate, endDate } = useDate();
@@ -23,8 +27,36 @@ export default function BudgetSummary() {
   // Log request for debugging
   console.log(`Fetching summary data for ${timeRange} from ${startDateStr} to ${endDateStr}`);
 
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
   const { width: screenWidth } = useWindowDimensions(); //This  concept is called property renaming during destructuring
   const { theme } = useTheme();
+
+  // Fetch local budgets for the selected date's month to check if an overall budget exists
+  const month = startDate.getMonth() + 1;
+  const year = startDate.getFullYear();
+  const { data: budgets } = useLocalBudgets(month, year);
+
+  // Get monthly summary to compute the pro-rata budget
+  const monthStartStr = getQueryTimeFormat(new Date(year, month - 1, 1));
+  const monthEndStr = getQueryTimeFormat(new Date(year, month, 0));
+  const { data: monthlySummary } = useCombinedSummary('month', monthStartStr, monthEndStr);
+
+  // Balance calculation
+  let displayBalance = 0;
+  let hasOverallBudget = false;
+
+  if (summary) {
+    const overallBudget = budgets?.find(b => b.categoryId === null);
+    if (overallBudget) {
+      hasOverallBudget = true;
+      const totalMonthExpense = monthlySummary?.expense || 0;
+      const currentTimeframeExpense = summary?.expense || 0;
+      const computedBudget = getProRataBudget(overallBudget.amount, timeRange, startDate, totalMonthExpense, currentTimeframeExpense);
+      
+      displayBalance = computedBudget - summary.expense;
+    }
+  }
 
   if (isLoading) {
     return (
@@ -56,19 +88,30 @@ export default function BudgetSummary() {
     return (
       <View style={styles.container}>
         <View style={styles.centerContent}>
-          <Text style={styles.balanceLabel}>Balance</Text>
-          <Text style={styles.balanceValue}>{formatCurrency(0)}</Text>
+          {hasOverallBudget ? (
+            <>
+              <Text style={[styles.balanceLabel, { color: theme.colors.placeholder }]}>Balance</Text>
+              <Text style={[styles.balanceValue, { color: displayBalance < 0 ? '#F44336' : theme.colors.text }]}>
+                {formatCurrency(displayBalance)}
+              </Text>
+            </>
+          ) : (
+            <TouchableOpacity onPress={() => navigation.navigate('Budget')} style={{ alignItems: 'center', paddingVertical: 10 }}>
+              <MaterialCommunityIcons name="bullseye" size={24} color={theme.colors.placeholder} style={{ marginBottom: 4 }} />
+              <Text style={[styles.balanceLabel, { color: theme.colors.placeholder, textAlign: 'center', paddingHorizontal: 16 }]}>Set a budget first to track balance</Text>
+            </TouchableOpacity>
+          )}
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Income</Text>
               <Text style={[styles.summaryValue, styles.incomeText]}>
-                {formatCurrency(0)}
+                {formatCurrency(summary?.income || 0)}
               </Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Expense</Text>
               <Text style={[styles.summaryValue, styles.expenseText]}>
-                {formatCurrency(0)}
+                {formatCurrency(summary?.expense || 0)}
               </Text>
             </View>
           </View>
@@ -133,9 +176,18 @@ export default function BudgetSummary() {
               position: 'absolute',
               zIndex: 11,
             },
-          ]} pointerEvents="none">
-            <Text style={[styles.balanceLabel, { color: theme.colors.placeholder } ]}>Balance</Text>
-            <Text style={[styles.balanceValue, { color: theme.colors.text } ]}>{formatCurrency(summary.balance)}</Text>
+          ]} pointerEvents="box-none">
+            {hasOverallBudget ? (
+              <View pointerEvents="none" style={{ alignItems: 'center' }}>
+                <Text style={[styles.balanceLabel, { color: theme.colors.placeholder } ]}>Balance</Text>
+                <Text style={[styles.balanceValue, { color: displayBalance < 0 ? '#F44336' : theme.colors.text } ]}>{formatCurrency(displayBalance)}</Text>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => navigation.navigate('Budget')} style={{ alignItems: 'center', padding: 10 }}>
+                <MaterialCommunityIcons name="bullseye" size={24} color={theme.colors.placeholder} style={{ marginBottom: 4 }} />
+                <Text style={[styles.balanceLabel, { color: theme.colors.placeholder, textAlign: 'center', paddingHorizontal: 4, fontSize: 10 } ]}>Set a budget first</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       ) : (

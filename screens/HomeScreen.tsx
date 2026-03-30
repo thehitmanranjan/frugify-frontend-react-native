@@ -9,6 +9,7 @@ import Header from '../components/Header';
 import DateSelector from '../components/DateSelector';
 import TimeRangeSelector from '../components/TimeRangeSelector';
 import BudgetSummary from '../components/BudgetSummary';
+import DashboardBudgets from '../components/DashboardBudgets';
 import AddTransactionSheet from '../components/AddTransactionSheet';
 import SpeechToTextSheet from '../components/SpeechToTextSheet';
 import SyncStatusIndicator from '../components/SyncStatusIndicator';
@@ -18,10 +19,12 @@ import { useCombinedSummary } from '../hooks/useCombinedTransactions';
 import { useDate } from '../contexts/DateContext';
 import { useSearch } from '../contexts/SearchContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { getQueryTimeFormat } from '../lib/date-utils';
+import { getQueryTimeFormat, getProRataBudget } from '../lib/date-utils';
 import { formatTransactionDate } from '../lib/date-utils';
 import { formatTransactionAmount } from '../lib/formatters';
 import CategoryIcon from '../components/CategoryIcon';
+import BudgetProgressBar from '../components/BudgetProgressBar';
+import { useLocalBudgets } from '../hooks/useBudgets';
 import type { TransactionWithCategory } from '../hooks/useTransactions';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -59,6 +62,14 @@ export default function HomeScreen() {
     startDateStr,
     endDateStr
   );
+  
+  const currentMonth = startDate.getMonth() + 1;
+  const currentYear = startDate.getFullYear();
+  const { data: budgets } = useLocalBudgets(currentMonth, currentYear);
+
+  const monthStartStr = getQueryTimeFormat(new Date(currentYear, currentMonth - 1, 1));
+  const monthEndStr = getQueryTimeFormat(new Date(currentYear, currentMonth, 0));
+  const { data: monthlySummary } = useCombinedSummary('month', monthStartStr, monthEndStr);
 
   // Handle search target from Header search
   useEffect(() => {
@@ -86,6 +97,7 @@ export default function HomeScreen() {
       <DateSelector />
       <TimeRangeSelector />
       <BudgetSummary />
+      <DashboardBudgets />
       <View style={styles.syncStatusContainer}>
         <Text style={[styles.heading, { color: theme.colors.text, flex: 1 }]}>Transactions</Text>
         <SyncStatusIndicator />
@@ -141,6 +153,20 @@ export default function HomeScreen() {
           : [...prev, catIdStr]
       );
     };
+
+    const categoryBudget = budgets?.find((b) => b.categoryId === item.category.id);
+    
+    let categoryMonthlySpend = 0;
+    if (monthlySummary?.categoryData) {
+      const catData = monthlySummary.categoryData.find((c) => c.id === item.category.id);
+      if (catData) categoryMonthlySpend = catData.amount;
+    }
+
+    const proRataCategoryBudgetAmount = categoryBudget 
+      ? getProRataBudget(categoryBudget.amount, timeRange, startDate, categoryMonthlySpend, total) 
+      : null;
+    const isOverBudget = proRataCategoryBudgetAmount !== null && total > proRataCategoryBudgetAmount;
+
     return (
       <View>
         <TouchableOpacity
@@ -154,7 +180,14 @@ export default function HomeScreen() {
             style={styles.categoryIcon}
           />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.categoryName, { color: theme.colors.text }]}>{item.category.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={[styles.categoryName, { color: theme.colors.text }]} numberOfLines={1}>
+                {item.category.name}
+              </Text>
+              {isOverBudget && (
+                <MaterialCommunityIcons name="alert" size={16} color="#F44336" style={{ marginLeft: 6 }} />
+              )}
+            </View>
             <Text style={{ color: theme.colors.placeholder, fontSize: 12 }}>{item.transactions.length} transaction{item.transactions.length > 1 ? 's' : ''}</Text>
           </View>
           <Text
@@ -170,6 +203,17 @@ export default function HomeScreen() {
         </TouchableOpacity>
         {isExpanded && (
           <View style={{ marginLeft: 24, marginTop: 4, marginBottom: 8 }}>
+            {proRataCategoryBudgetAmount !== null && (
+              <View style={{ marginBottom: 12, marginRight: 16 }}>
+                 <BudgetProgressBar
+                   label={`${item.category.name} Budget`}
+                   spent={total}
+                   budget={proRataCategoryBudgetAmount}
+                   color={item.category.color}
+                   compact={true}
+                 />
+              </View>
+            )}
             {item.transactions.map((tx) => {
               const isSearchedTransaction = searchTarget && searchTarget.transactionId === tx.id;
               return (

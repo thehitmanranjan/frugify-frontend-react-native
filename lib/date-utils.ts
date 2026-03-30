@@ -68,3 +68,47 @@ export function formatDatePeriod(date: Date, range: TimeRange): string {
       return format(date, 'MMMM yyyy');
   }
 }
+
+/**
+ * Calculates a pro-rata budget limit out of a monthly budget based on the selected time range
+ */
+export function getProRataBudget(
+  monthlyBudget: number,
+  timeRange: string,
+  date: Date,
+  totalMonthExpense?: number,
+  currentTimeframeExpense?: number
+): number {
+  if (timeRange === 'month') return monthlyBudget;
+  if (timeRange === 'year' || timeRange === 'all') return monthlyBudget * 12;
+
+  // Smart advanced pro-rata constraint using historical expense data
+  if (totalMonthExpense !== undefined && currentTimeframeExpense !== undefined) {
+    const year = date.getFullYear();
+    const monthIndex = date.getMonth();
+    const dateOfStart = date.getDate();
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    
+    const expenseBeforeTimeframe = Math.max(0, totalMonthExpense - currentTimeframeExpense);
+    const remainingBudgetBeforeTimeframe = Math.max(0, monthlyBudget - expenseBeforeTimeframe);
+    const remainingDays = Math.max(1, daysInMonth - dateOfStart + 1);
+
+    const smartDailyBudget = remainingBudgetBeforeTimeframe / remainingDays;
+
+    if (timeRange === 'day') {
+      return smartDailyBudget;
+    }
+    if (timeRange === 'week') {
+      return Math.min(remainingBudgetBeforeTimeframe, smartDailyBudget * 7);
+    }
+  }
+
+  // Simple unconstrained pro-rata fallback
+  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const dailyBudget = monthlyBudget / daysInMonth;
+
+  if (timeRange === 'day') return dailyBudget;
+  if (timeRange === 'week') return dailyBudget * 7;
+
+  return monthlyBudget;
+}
