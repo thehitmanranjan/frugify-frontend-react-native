@@ -21,18 +21,19 @@ export default function BudgetProgressBar({
 }: BudgetProgressBarProps) {
   const { theme, isDarkMode } = useTheme();
 
-  const progress = budget > 0 ? Math.min(spent / budget, 1) : 0;
+  const rawProgress = budget > 0 ? spent / budget : 0;
+  const progress = Math.min(rawProgress, 1);
   const isOverBudget = spent > budget;
   const remaining = budget - spent;
 
   // Color logic
   const defaultGreen = isDarkMode ? '#03DAC5' : '#4CAF50';
   const warningColor = '#FF9800';
-  const dangerColor = isDarkMode ? '#CF6679' : '#E53935';
+  const dangerColor = theme.colors.error || (isDarkMode ? '#CF6679' : '#F44336');
 
   let barColor = color || defaultGreen;
-  if (progress > 0.9) barColor = dangerColor;
-  else if (progress > 0.7) barColor = warningColor;
+  if (rawProgress >= 1) barColor = dangerColor;
+  else if (rawProgress >= 0.9) barColor = warningColor;
 
   const trackColor = isDarkMode ? '#2a2a2a' : '#f0f0f0';
 
@@ -88,7 +89,7 @@ export default function BudgetProgressBar({
         </Text>
         <Text style={[styles.remaining, { color: isOverBudget ? dangerColor : defaultGreen }]}>
           {isOverBudget
-            ? `Over by ${formatCurrency(Math.abs(remaining))}`
+            ? `⚠️ Over budget by ${formatCurrency(Math.abs(remaining))}`
             : `${formatCurrency(remaining)} left`}
         </Text>
       </View>

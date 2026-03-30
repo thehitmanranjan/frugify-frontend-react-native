@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Platform, ScrollView, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Platform, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
 import { Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCategories } from '../hooks/useCategories';
@@ -9,6 +9,9 @@ import { Calendar } from 'react-native-calendars';
 import CategoryIcon from './CategoryIcon';
 import { useDate } from '../contexts/DateContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLocalBudgets } from '../hooks/useBudgets';
+import { useCombinedSummary } from '../hooks/useCombinedTransactions';
+import { getQueryTimeFormat } from '../lib/date-utils';
 
 
 interface AddTransactionSheetProps {
@@ -97,6 +100,61 @@ export default function AddTransactionSheet({
     { name: 'delete', label: 'Waste' },
   ];
 
+  // Budget tracking calculations
+  const parsedDate = new Date(date);
+  const txMonth = parsedDate.getMonth() + 1;
+  const txYear = parsedDate.getFullYear();
+
+  const { data: budgets } = useLocalBudgets(txMonth, txYear);
+
+  const startDate = new Date(txYear, txMonth - 1, 1);
+  const endDate = new Date(txYear, txMonth, 0);
+  const startQuery = getQueryTimeFormat(startDate);
+  const endQuery = getQueryTimeFormat(endDate);
+  const { data: summary } = useCombinedSummary('month', startQuery, endQuery);
+  
+  // Calculate if adding/editing this expense will exceed budget
+  let budgetWarning: string | null = null;
+  let isOverBudgetForSave = false;
+
+  if (transactionType === 'expense' && amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && budgets && summary) {
+    const numAmount = parseFloat(amount);
+    const overallBudget = budgets.find((b) => b.categoryId === null);
+    const categoryBudget = categoryId ? budgets.find((b) => b.categoryId?.toString() === categoryId) : null;
+    const selectedCategoryName = categories?.find(c => c.id.toString() === categoryId)?.name || 'the selected category';
+
+    let totalSpentAlready = 0;
+    let categorySpentAlready = 0;
+
+    if (summary.categoryData) {
+      for (const cat of summary.categoryData) {
+        if (cat.type === 'expense') {
+          totalSpentAlready += cat.amount;
+          if (cat.id.toString() === categoryId) {
+            categorySpentAlready = cat.amount;
+          }
+        }
+      }
+    }
+
+    // Adjust spent amounts if editing the same transaction in the same month
+    if (isEditMode && transaction && new Date(transaction.date).getMonth() + 1 === txMonth && new Date(transaction.date).getFullYear() === txYear && transaction.category?.type === 'expense') {
+      if (transaction.categoryId.toString() === categoryId) {
+        categorySpentAlready -= transaction.amount;
+      }
+      totalSpentAlready -= transaction.amount;
+    }
+
+    // Check category budget first as it's more specific
+    if (categoryBudget && categorySpentAlready + numAmount > categoryBudget.amount) {
+      isOverBudgetForSave = true;
+      budgetWarning = `⚠️ Warning: This will exceed your ${selectedCategoryName} budget for this month.`;
+    } else if (overallBudget && totalSpentAlready + numAmount > overallBudget.amount) {
+      isOverBudgetForSave = true;
+      budgetWarning = `⚠️ Warning: This will exceed your overall monthly budget.`;
+    }
+  }
+
   // Prefill form in edit mode
   useEffect(() => {
     if (isVisible) {
@@ -115,18 +173,7 @@ export default function AddTransactionSheet({
     }
   }, [isVisible, transactionType, isEditMode, transaction, currentDate]);
 
-  const handleSubmit = async () => {
-    // Validate form
-    const newErrors = { amount: '', categoryId: '' };
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      newErrors.amount = 'Amount is required and must be a positive number';
-    }
-    if (!categoryId) {
-      newErrors.categoryId = 'Category is required';
-    }
-    setErrors(newErrors);
-    if (newErrors.amount || newErrors.categoryId) return;
-    
+  const executeSave = () => {
     // Close modal immediately for instant feedback
     onClose();
     
@@ -154,6 +201,33 @@ export default function AddTransactionSheet({
       }
     } catch (error) {
       console.error('Error saving transaction:', error);
+    }
+  };
+
+  const handleSubmit = async () => {
+    // Validate form
+    const newErrors = { amount: '', categoryId: '' };
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+      newErrors.amount = 'Amount is required and must be a positive number';
+    }
+    if (!categoryId) {
+      newErrors.categoryId = 'Category is required';
+    }
+    setErrors(newErrors);
+    if (newErrors.amount || newErrors.categoryId) return;
+    
+    // Intercept if over budget
+    if (isOverBudgetForSave) {
+      Alert.alert(
+        'Budget Exceeded',
+        'This transaction will exceed your monthly budget. Do you still want to save it?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Save Anyway', style: 'destructive', onPress: executeSave }
+        ]
+      );
+    } else {
+      executeSave();
     }
   };
 
@@ -264,6 +338,12 @@ export default function AddTransactionSheet({
               </TouchableOpacity>
               {errors.categoryId ? (
                 <Text style={[styles.errorText, { color: theme.colors.error || '#F44336' }]}>{errors.categoryId}</Text>
+              ) : null}
+              {budgetWarning && !errors.amount && !errors.categoryId ? (
+                <View style={styles.warningContainer}>
+                  <MaterialCommunityIcons name="alert-circle" size={16} color="#FF9800" />
+                  <Text style={styles.warningText}>{budgetWarning}</Text>
+                </View>
               ) : null}
             </View>
             <View style={styles.formGroup}>
@@ -611,6 +691,21 @@ const styles = StyleSheet.create({
     color: '#F44336',
     fontSize: 12,
     marginTop: 4,
+  },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  warningText: {
+    color: '#FF9800',
+    fontSize: 13,
+    marginLeft: 6,
+    flex: 1,
+    fontWeight: '500',
   },
   submitButton: {
     marginTop: 16,
