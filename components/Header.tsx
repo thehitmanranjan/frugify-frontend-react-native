@@ -411,7 +411,6 @@ export default function Header({ showBackButton = false, title, onBackPress }: H
                 <Text style={[styles.drawerItemText, { color: theme.colors.text }]}>Dashboard</Text>
               </TouchableOpacity>
               
-              {/*
               <TouchableOpacity 
                 style={styles.drawerItem}
                 onPress={() => {
@@ -422,7 +421,6 @@ export default function Header({ showBackButton = false, title, onBackPress }: H
                 <MaterialCommunityIcons name="wallet" size={22} color={theme.colors.text} style={styles.drawerIcon} />
                 <Text style={[styles.drawerItemText, { color: theme.colors.text }]}>Budget</Text>
               </TouchableOpacity>
-              */}
               
               <TouchableOpacity 
                 style={styles.drawerItem}
