@@ -68,15 +68,38 @@ export function useUpdateLocalTransaction() {
   return useMutation({
     mutationFn: async ({
       localId,
+      serverId,
       updates,
     }: {
-      localId: string;
+      localId?: string;
+      serverId?: number;
       updates: Partial<LocalTransaction>;
     }) => {
-      await database.updateTransaction(localId, {
-        ...updates,
-        syncStatus: 'pending', // Mark as pending for re-sync
-      });
+      let targetLocalId = localId;
+
+      if (!targetLocalId && serverId) {
+        // We have a server transaction that we are trying to update locally,
+        // but it doesn't exist in the local database yet.
+        const newLocalId = uuidv4();
+        const now = Date.now();
+        await database.addTransaction({
+          localId: newLocalId,
+          amount: updates.amount!,
+          date: updates.date!,
+          description: updates.description,
+          categoryId: updates.categoryId!,
+          syncStatus: 'pending',
+          serverId: serverId, // So syncManager knows to PATCH
+          createdAt: now,
+          updatedAt: now,
+        });
+        targetLocalId = newLocalId;
+      } else if (targetLocalId) {
+        await database.updateTransaction(targetLocalId, {
+          ...updates,
+          syncStatus: 'pending', // Mark as pending for re-sync
+        });
+      }
 
       // Trigger background sync
       syncManager.syncPendingTransactions();

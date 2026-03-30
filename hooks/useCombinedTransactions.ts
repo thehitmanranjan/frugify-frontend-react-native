@@ -65,13 +65,31 @@ export function useCombinedSummary(
     const enrichedServerTransactions = serverTransactions.map(serverTx => {
       const localMatch = localTransactions.find(local => local.serverId === serverTx.id);
       if (localMatch) {
+        // If there's a pending local edit, optimistically override the server fields
+        if (localMatch.syncStatus === 'pending') {
+          const category = categories?.find(cat => cat.id === localMatch.categoryId);
+          return {
+            ...serverTx,
+            amount: localMatch.amount,
+            date: localMatch.date,
+            description: localMatch.description,
+            categoryId: localMatch.categoryId,
+            category: category || serverTx.category,
+            _localId: localMatch.localId,
+            _syncStatus: localMatch.syncStatus,
+          } as any;
+        }
+
         return {
           ...serverTx,
           _localId: localMatch.localId,
           _syncStatus: localMatch.syncStatus,
         } as any;
       }
-      return serverTx;
+      return {
+        ...serverTx,
+        _syncStatus: 'synced',
+      } as any;
     });
 
     // Combine: unmerged local transactions first, then enriched server transactions
@@ -106,6 +124,52 @@ export function useCombinedSummary(
             color: category.color,
             amount: local.amount
           });
+        }
+      }
+    });
+
+    // Step 2: For pending edits to existing server transactions, adjust the summary data
+    serverTransactions.forEach(serverTx => {
+      const localMatch = localTransactions.find(local => local.serverId === serverTx.id && local.syncStatus === 'pending');
+      if (localMatch) {
+        const oldCategory = serverTx.category;
+        const newCategory = categories?.find(cat => cat.id === localMatch.categoryId) || oldCategory;
+
+        // Subtract the old stale server amounts
+        if (oldCategory?.type === 'income') {
+          income -= serverTx.amount;
+        } else {
+          expense -= serverTx.amount;
+        }
+
+        if (oldCategory) {
+          const oldCatData = updatedCategoryData.find(c => c.id === oldCategory.id);
+          if (oldCatData) {
+            oldCatData.amount -= serverTx.amount;
+          }
+        }
+
+        // Add the newly edited local amounts
+        if (newCategory?.type === 'income') {
+          income += localMatch.amount;
+        } else {
+          expense += localMatch.amount;
+        }
+
+        if (newCategory) {
+          const newCatData = updatedCategoryData.find(c => c.id === newCategory.id);
+          if (newCatData) {
+            newCatData.amount += localMatch.amount;
+          } else {
+            updatedCategoryData.push({
+              id: newCategory.id,
+              name: newCategory.name,
+              type: newCategory.type,
+              icon: newCategory.icon,
+              color: newCategory.color,
+              amount: localMatch.amount
+            });
+          }
         }
       }
     });

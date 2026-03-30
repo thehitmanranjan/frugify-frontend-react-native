@@ -105,7 +105,22 @@ export default function HomeScreen() {
       }
       groups[catId].transactions.push(tx);
     });
-    return Object.values(groups);
+
+    const result = Object.values(groups);
+
+    // Sort transactions within each category by amount (high to low)
+    result.forEach(group => {
+      group.transactions.sort((a, b) => Number(b.amount) - Number(a.amount));
+    });
+
+    // Sort categories by total amount (high to low)
+    result.sort((a, b) => {
+      const sumA = a.transactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+      const sumB = b.transactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+      return sumB - sumA;
+    });
+
+    return result;
   }, [summary]);
 
   // Choose card background color based on theme

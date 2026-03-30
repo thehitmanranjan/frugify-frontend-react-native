@@ -85,17 +85,33 @@ class SyncManager {
 
       for (const transaction of pending) {
         try {
-          // Sync to server
-          const serverTransaction = await apiRequest<any>(
-            'POST',
-            '/api/transactions',
-            {
-              amount: transaction.amount,
-              date: transaction.date,
-              description: transaction.description,
-              categoryId: transaction.categoryId,
-            }
-          );
+          let serverTransaction;
+          
+          if (transaction.serverId) {
+            // Update existing transaction on server
+            serverTransaction = await apiRequest<any>(
+              'PATCH',
+              `/api/transactions/${transaction.serverId}`,
+              {
+                amount: transaction.amount,
+                date: transaction.date,
+                description: transaction.description,
+                categoryId: transaction.categoryId,
+              }
+            );
+          } else {
+            // Create new transaction on server
+            serverTransaction = await apiRequest<any>(
+              'POST',
+              '/api/transactions',
+              {
+                amount: transaction.amount,
+                date: transaction.date,
+                description: transaction.description,
+                categoryId: transaction.categoryId,
+              }
+            );
+          }
 
           // Update local record with server ID and mark as synced
           await database.updateTransaction(transaction.localId, {

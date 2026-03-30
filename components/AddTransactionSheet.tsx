@@ -27,11 +27,14 @@ export default function AddTransactionSheet({
   const isEditMode = !!transaction;
   const { data: categories, isLoading: isCategoriesLoading } = useCategories(transactionType);
   const createTransaction = useCreateLocalTransaction(); // Use local-first hook
-  const updateTransaction = require('../hooks/useTransactions').useUpdateTransaction();
+  const updateTransactionLocal = require('../hooks/useLocalTransactions').useUpdateLocalTransaction();
   const deleteTransaction = require('../hooks/useTransactions').useDeleteTransaction();
   const { currentDate } = useDate();
   const { theme } = useTheme();
   const createCategory = require('../hooks/useCategories').useCreateCategory();
+
+  // Form state
+
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -130,12 +133,15 @@ export default function AddTransactionSheet({
     // Save in background (non-blocking)
     try {
       if (isEditMode && transaction) {
-        updateTransaction.mutate({
-          id: transaction.id,
-          amount: parseFloat(amount),
-          categoryId: parseInt(categoryId),
-          description: description || undefined,
-          date: date,
+        updateTransactionLocal.mutate({
+          localId: (transaction as any)._localId,
+          serverId: transaction.id,
+          updates: {
+            amount: parseFloat(amount),
+            categoryId: parseInt(categoryId),
+            description: description || undefined,
+            date: date,
+          }
         });
       } else {
         // Save locally first - happens in background
@@ -291,15 +297,17 @@ export default function AddTransactionSheet({
                   mode="contained"
                   onPress={handleSubmit}
                   style={[styles.submitButton, { backgroundColor: transactionType === 'income' ? '#4CAF50' : '#2196F3', flex: 1 }]}
-                  disabled={updateTransaction.isPending}
-                  loading={updateTransaction.isPending}
+                  contentStyle={{ paddingVertical: 8 }}
+                  disabled={updateTransactionLocal.isPending}
+                  loading={updateTransactionLocal.isPending}
                 >
-                  {updateTransaction.isPending ? 'Editing...' : 'Edit'}
+                  {updateTransactionLocal.isPending ? 'Editing...' : 'Edit'}
                 </Button>
                 <Button
                   mode="outlined"
                   onPress={handleDelete}
                   style={[styles.submitButton, { borderColor: '#F44336', flex: 1 }]}
+                  contentStyle={{ paddingVertical: 8 }}
                   textColor="#F44336"
                   disabled={deleteTransaction.isPending}
                   loading={deleteTransaction.isPending}
@@ -312,6 +320,7 @@ export default function AddTransactionSheet({
                 mode="contained"
                 onPress={handleSubmit}
                 style={[styles.submitButton, { backgroundColor: transactionType === 'income' ? '#4CAF50' : '#2196F3' }]}
+                contentStyle={{ paddingVertical: 8 }}
                 disabled={createTransaction.isPending}
                 loading={createTransaction.isPending}
               >
@@ -606,7 +615,6 @@ const styles = StyleSheet.create({
   submitButton: {
     marginTop: 16,
     borderRadius: 8,
-    paddingVertical: 8,
   },
   pickerModalOverlay: {
     flex: 1,
